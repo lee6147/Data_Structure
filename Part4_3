@@ -1,0 +1,151 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#define MAX_STACK_SIZE 100
+
+// ----- 전역 변수: 스택 구현 -----
+typedef int element;
+element data[MAX_STACK_SIZE]; // 스택의 저장 공간
+int top;                      // 스택의 가장 위를 가리키는 인덱스
+
+// ----- 스택 기본 함수들 -----
+
+/**
+ * @brief 스택을 비어있는 상태로 초기화합니다. 🥞
+ * @details top을 -1로 설정하여 스택에 데이터가 없음을 표시합니다.
+ */
+void init_stack() {
+    top = -1;
+}
+
+/**
+ * @brief 스택이 비어있는지 확인합니다.
+ * @return 비어있으면 1(true), 아니면 0(false)을 반환합니다.
+ */
+int is_empty() {
+    return (top == -1);
+}
+
+/**
+ * @brief 스택이 꽉 찼는지 확인합니다.
+ * @return 꽉 찼으면 1(true), 아니면 0(false)을 반환합니다.
+ */
+int is_full() {
+    return (top == MAX_STACK_SIZE - 1);
+}
+
+/**
+ * @brief 스택에 저장된 데이터의 개수를 반환합니다.
+ * @return 스택의 크기 (top은 0부터 시작하므로 +1)
+ */
+int size() {
+    return top + 1;
+}
+
+/**
+ * @brief 스택의 맨 위에 데이터를 추가합니다. (push)
+ * @param item 스택에 추가할 정수 데이터
+ */
+void push(element item)
+{
+    // 스택이 꽉 찼는지 먼저 확인하여 오버플로우를 방지합니다.
+    if (is_full())
+        return;
+    // top 인덱스를 1 증가시킨 후, 해당 위치에 데이터를 저장합니다.
+    data[++top] = item;
+}
+
+/**
+ * @brief 스택의 맨 위에서 데이터를 꺼내면서 제거합니다. (pop)
+ * @return 스택의 맨 위에 있던 데이터
+ */
+element pop()
+{
+    // 스택이 비어있는지 먼저 확인하여 언더플로우를 방지합니다.
+    if (is_empty())
+        return -1; // 오류를 의미하는 값으로 -1을 반환합니다.
+    // 현재 top이 가리키는 데이터를 반환한 후, top 인덱스를 1 감소시킵니다.
+    return data[top--];
+}
+
+/**
+ * @brief 스택의 맨 위 데이터를 제거하지 않고 확인만 합니다. (peek)
+ * @return 스택의 맨 위에 있는 데이터
+ */
+element peek()
+{
+    if (is_empty())
+        return -1;
+    // 현재 top이 가리키는 데이터를 반환합니다. top 값은 변경되지 않습니다.
+    return data[top];
+}
+
+/**
+ * @brief 후위 표기식 문자열을 계산하여 결과를 반환하는 핵심 함수입니다. ⚙️
+ * @param exp 계산할 후위 표기식 문자열 (예: "10 5 +")
+ * @return 정수로 계산된 최종 결과값
+ */
+int eval(char exp[])
+{
+    int left_operand, right_operand;
+
+    // 계산을 시작하기 전에 스택을 깨끗하게 초기화합니다.
+    init_stack();
+
+    // strtok 함수를 사용하여 문자열을 공백(" ") 기준으로 토큰(token)으로 자릅니다.
+    // for 루프는 문자열의 끝까지 토큰을 하나씩 가져와 처리합니다.
+    for (char *token = strtok(exp, " "); token != NULL; token = strtok(NULL, " ")) {
+
+        // 토큰의 첫 글자가 숫자인지 확인하여 피연산자인지 연산자인지 구분합니다.
+        if (isdigit(token[0])) {
+            // [규칙 1] 토큰이 숫자(피연산자)이면,
+            // atoi 함수로 문자열을 정수로 변환하여 스택에 push합니다.
+            push(atoi(token));
+        }
+        else // 토큰이 숫자가 아닌 경우 (연산자로 간주)
+        {
+            // [규칙 2] 토큰이 연산자이면,
+            char op = token[0];
+            int result;
+
+            // 스택에서 피연산자 두 개를 pop 합니다.
+            // ※ 중요: 먼저 pop 되는 것이 오른쪽 피연산자입니다. (LIFO 특성)
+            // 예: "10 5 -"의 경우 스택에는 10, 5 순으로 쌓여있으므로 5가 먼저 pop 됩니다.
+            right_operand = pop();
+            left_operand = pop();
+
+            // 연산자에 따라 계산을 수행합니다.
+            switch (op) {
+            case '+': result = left_operand + right_operand; break;
+            case '-': result = left_operand - right_operand; break;
+            case '*': result = left_operand * right_operand; break;
+            case '/': result = left_operand / right_operand; break;
+            }
+            // 계산된 결과를 다시 스택에 push합니다.
+            // 이 결과는 다음 연산자의 피연산자로 사용될 수 있습니다.
+            push(result);
+        }
+    }
+    // for 루프가 끝나면 스택에는 최종 결과값 하나만 남게 됩니다.
+    // 이 값을 pop하여 반환합니다.
+    return pop();
+}
+
+
+int main() {
+    int i = 0;
+    char t = 0;
+    char in[1000] = {0};
+
+    // 사용자가 EOF(Ctrl+Z 또는 Ctrl+D)를 입력할 때까지 문자열을 입력받습니다.
+    while ((t = getchar()) != EOF)
+        in[i++] = t;
+    in[i] = '\0'; // 문자열의 끝을 표시합니다.
+
+    // eval 함수를 호출하여 결과를 계산하고, 화면에 출력합니다.
+    printf("%d\n", eval(in));
+
+    return 0;
+}
