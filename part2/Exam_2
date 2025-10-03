@@ -1,0 +1,160 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#define MAX_STACK_SIZE 100
+
+// ----- 스택 관련 전역 -----
+// 연산자(char)를 저장하지만, 기존 코드 유지를 위해 int로 둡니다.
+typedef int element;
+element stack[MAX_STACK_SIZE];
+int top;
+
+// ----- 스택 관련 함수들 -----
+void init_stack()
+{
+    top = -1; // 스택 초기화
+}
+int is_empty()
+{
+    return (top == -1);
+}
+int is_full()
+{
+    return (top == MAX_STACK_SIZE - 1);
+}
+int size()
+{
+    return top + 1;
+}
+void push(element item)
+{
+    if (!is_full())
+        stack[++top] = item;
+}
+element pop()
+{
+    if (is_empty())
+        return -1; // 언더플로우 방지
+    return stack[top--];
+}
+element peek()
+{
+    if (is_empty())
+        return -1;
+    return stack[top];
+}
+
+// ----- 연산자 우선순위 함수 -----
+int prec(char op)
+{
+    // 오류 1: switch-case 문법 오류 수정
+    switch (op)
+    {
+    case '(': case ')': return 0;
+    case '+':
+    case '-':
+        return 1;
+    case '*':
+    case '/':
+        return 2;
+    }
+    // 오류 2: 정의되지 않은 문자에 대한 반환 값 추가
+    return -1;
+}
+
+// ----- 중위 -> 후위 변환 함수 -----
+// 입력: infix_expr (중위 표기 수식)
+// 출력: postfix_expr (후위 표기 수식)
+void infix_to_postfix(char infix_expr[], char postfix_expr[])
+{
+    char curr_char, stack_top_op;
+    int out_pos = 0;
+    int len = strlen(infix_expr);
+    
+    // 오류 3: 함수가 호출될 때마다 스택을 초기화해야 함
+    init_stack(); 
+
+    // 오류 4: for 루프가 무한으로 실행되지 않도록 조건 추가
+    for (int i = 0; i < len; i++) {
+        // 오류 5: 변수명 오타 수정
+        curr_char = infix_expr[i];
+
+        if (isspace(curr_char))
+            continue; //공백 무시
+
+        switch (curr_char) {
+        case '(':
+            push(curr_char);
+            break;
+
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+            while (!is_empty() && prec(curr_char) <= prec(peek())) {
+                postfix_expr[out_pos++] = pop();
+                postfix_expr[out_pos++] = ' ';
+            }
+            push(curr_char);
+            break;
+            
+        case ')':
+            stack_top_op = pop();
+            while (stack_top_op != '(') {
+                // 오류 6: 비교(==)가 아닌 대입(=) 연산자 사용
+                postfix_expr[out_pos++] = stack_top_op;
+                postfix_expr[out_pos++] = ' ';
+                stack_top_op = pop();
+                 if (stack_top_op == -1) break; // 짝이 맞지 않는 괄호 예외 처리
+            }
+            break;
+            
+        default: // 피연산자(숫자) 처리
+            // isdigit()으로 숫자인지 확인하는 것이 더 안전함
+            if(isdigit(curr_char)) {
+                while (i < len && isdigit(infix_expr[i])) {
+                     // 오류 6: 대입(=) 연산자 및 변수명 오타 수정
+                    postfix_expr[out_pos++] = infix_expr[i++];
+                }
+                postfix_expr[out_pos++] = ' ';
+                i--; // 외부 for 루프의 i++를 보정
+            }
+            break;
+        }
+    }
+    
+    // 루프 종료 후 스택에 남은 연산자 모두 pop
+    while (!is_empty()) {
+        postfix_expr[out_pos++] = pop();
+        postfix_expr[out_pos++] = ' ';
+    }
+    
+    // 마지막 공백을 제거하고 문자열의 끝(NULL)을 표시
+    if (out_pos > 0) out_pos--; 
+    postfix_expr[out_pos] = '\0';
+}
+
+// ----- 메인 함수 -----
+// 표준 입력에서 중위식을 받아 후위식으로 변환 후 출력
+int main()
+{
+    int i = 0;
+    char input_char = 0;
+    char infix_expr[1000] = {0};
+    char postfix_expr[1000] = {0};
+
+    // 표준 입력으로 중위 표기식 읽기 (개행 전까지)
+    while ((input_char = getchar()) != '\n' && input_char != EOF)
+        infix_expr[i++] = input_char;
+    infix_expr[i] = '\0';
+    
+    // 변환 수행
+    infix_to_postfix(infix_expr, postfix_expr);
+
+    // 결과 출력
+    printf("%s\n", postfix_expr);
+
+    return 0;
+}
