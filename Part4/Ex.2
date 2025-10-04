@@ -1,0 +1,102 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#define MAX_STACK_SIZE 100
+
+typedef int element;
+element data[MAX_STACK_SIZE];
+int top;
+
+void init_stack() { top = -1; }
+int is_empty() { return (top == -1); }
+int is_full() { return (top == MAX_STACK_SIZE - 1); }
+int size() { return top + 1; }
+
+void push(element item)
+{
+    if (is_full())
+        return;
+    // 오류 1: 스택 배열 이름 수정 (stack -> data)
+    data[++top] = item;
+}
+
+element pop()
+{
+    if (is_empty())
+        return -1; // 언더플로우 시 -1 반환 (오류 값)
+    // 오류 2: pop은 top을 감소시켜야 함 (peek의 원래 코드)
+    return data[top--];
+}
+
+element peek()
+{
+    if (is_empty())
+        return -1;
+    // 오류 2: peek은 top을 변경하지 않아야 함 (pop의 원래 코드)
+    return data[top];
+}
+
+int eval(char exp[])
+{
+    int left_operand, right_operand;
+
+    init_stack();
+
+    // strtok는 문자열을 특정 구분자 (여기서는 공백)로 자르고, 잘린 부분(토큰)을 하나씩 반환
+    // 첫번째 호출 : strtok(exp, " ") - exp 문자열을 공백으로 나누어 첫번째 토큰을 가져옴
+    // 이후 호출: strtok(NULL, " ") - 이전에 처리했던 나머지 문자열에서 다음 토큰을 가져옴
+
+    // 오류 3: for 루프 문법 수정
+    for (char *token = strtok(exp, " "); token != NULL; token = strtok(NULL, " ")) {
+
+        // 현재 토큰의 첫 글자가 숫자인지 확인 (음수는 고려하지 않음)
+        if (isdigit(token[0]))
+            push(atoi(token));
+        else // 토큰이 연산자인 경우
+        {
+            int result;
+            char op = token[0];
+
+            right_operand = pop();
+            left_operand = pop();
+
+            switch (op) {
+            case '+':
+                result = left_operand + right_operand;
+                break;
+            case '-':
+                result = left_operand - right_operand;
+                break;
+            case '*':
+                result = left_operand * right_operand;
+                break;
+            case '/':
+                // 0으로 나누는 경우에 대한 예외 처리를 추가하면 더 좋습니다.
+                result = left_operand / right_operand;
+                break;
+            }
+            // 연산 결과 스택에 push
+            push(result);
+        }
+    }
+    return pop();
+}
+
+int main() {
+    int i = 0;
+    char t = 0;
+    char in[1000] = {0};
+    // char post[1000] = { 0 }; // 사용되지 않으므로 주석 처리하거나 삭제 가능
+
+    // input string (EOF는 Ctrl+Z 또는 Ctrl+D 로 입력)
+    while ((t = getchar()) != EOF)
+        in[i++] = t;
+    in[i] = '\0';
+
+    // output
+    printf("%d\n", eval(in));
+
+    return 0;
+}
