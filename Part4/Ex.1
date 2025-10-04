@@ -8,33 +8,33 @@ typedef int element;
 element data[MAX_STACK_SIZE];
 int top;
 
-void init_stack() { 
+void init_stack() {  //To fill
     top = -1; 
 }
 
-int is_empty() { 
+int is_empty() { //To fill
     return (top == -1); 
 }
 
-int is_full() { 
+int is_full() { //To fill
     return (top == MAX_STACK_SIZE - 1); 
 }
 
-int size() { 
+int size() { //To fill
     return (top + 1); 
 }
 
 void push(element item)
 {
-    if (is_full()) // 스택이 가득 찼는지 확인
-    {
+    if (is_full()) // 스택이 가득 찼는지 확인 //To fill
+    {    //To fill
         // 문제의 요구사항에 따라 가득 찼을 때는 아무것도 하지 않거나
         // 에러 메시지를 출력할 수 있습니다. 여기서는 에러를 표시합니다.
         fprintf(stderr, "Stack is full\n"); 
         return;
     }
     else
-    {
+    {   //To fill     
         // top을 먼저 증가시킨 후, 해당 위치에 데이터를 삽입
         data[++top] = item;
     }
@@ -42,18 +42,18 @@ void push(element item)
 
 element pop()
 {
-    if (is_empty()) // 스택이 비어있는지 확인
+    if (is_empty()) // 스택이 비어있는지 확인 //To fill
         return -1; // 비어있으면 -1 반환
     // 현재 top 위치의 데이터를 반환한 후, top을 감소
-    return data[top--]; 
+    return data[top--]; //To fill
 }
 
 element peek()
 {
-    if (is_empty()) // 스택이 비어있는지 확인
+    if (is_empty()) // 스택이 비어있는지 확인    //To fill
         return -1; // 비어있으면 -1 반환
     // 현재 top 위치의 데이터를 반환 (top은 변경하지 않음)
-    return data[top];
+    return data[top];    //To fill
 }
 
 int main(void)
