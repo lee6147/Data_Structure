@@ -1,94 +1,130 @@
+// 표준 입출력 함수(printf, scanf)를 사용하기 위해 포함합니다.
 #include <stdio.h>
+// 동적 메모리 할당(malloc, free)을 사용하기 위해 포함합니다.
 #include <stdlib.h>
+// 수학 함수(powf)를 사용하기 위해 포함합니다.
 #include <math.h>
 
+// 다항식의 최대 항 개수를 정의하는 매크로지만, 이 코드에서는 동적 할당을 사용하므로 직접 사용되지는 않습니다.
 #define MAX_TERMS 51
 
+// 다항식의 단일 항을 표현하기 위한 구조체 정의
 typedef struct {
-    float coef;  // 계수
-    int expon;   // 차수
+    float coef; // 계수 (coefficient), 실수(float) 타입
+    int expon;   // 차수 (exponent), 정수(int) 타입
 } Term;
 
 /**
- * @brief 다항식을 "계수 x^차수" 형식으로 출력
- * @param t     항 배열
- * @param size  항 개수
+ * @brief 다항식을 "계수 x^차수" 형식으로 보기 좋게 출력하는 함수
+ * @param t      출력할 항들이 담긴 배열의 포인터
+ * @param size   배열에 들어있는 항의 총 개수
  */
 void print_poly(const Term *t, int size) {
-
-    // TO FILL
+    // 'first'는 현재 출력할 항이 첫 번째 유효한 항인지 확인하기 위한 플래그 변수입니다.
+    // 첫 항 앞에는 '+' 기호를 붙이지 않기 위해 사용하며, 1로 초기화하여 시작을 알립니다.
     int first = 1;
+
+    // for 루프를 통해 다항식을 구성하는 모든 항을 0번 인덱스부터 순회합니다.
     for (int i = 0; i < size; i++) {
+        // 계수가 0인 항 (예: 0.0x^2)은 다항식에서 의미가 없으므로 출력하지 않고 건너뜁니다.
         if (t[i].coef != 0.0f) {
+            // 'first'가 0(false)일 경우, 즉 이전에 유효한 항이 이미 출력된 상태라면
+            // 현재 항 앞에 " + "를 먼저 출력하여 각 항을 덧셈으로 연결합니다.
             if (!first) {
                 printf(" + ");
             }
-            // 소수점 6자리까지 출력하도록 수정
+
+            // "%.6f x^%d" 형식에 맞춰 계수와 차수를 출력합니다.
+            // "%.6f"는 계수(float)를 항상 소수점 6자리까지 정확하게 표시하도록 합니다.
             printf("%.6f x^%d", t[i].coef, t[i].expon);
+
+            // 첫 번째 유효한 항을 출력했으므로, 'first' 플래그를 0(false)으로 변경합니다.
+            // 이로써 다음 유효한 항부터는 앞에 " + "가 붙게 됩니다.
             first = 0;
         }
     }
+    // 다항식의 모든 항을 출력한 후, 줄바꿈을 하여 전체 출력을 마무리합니다.
     printf("\n");
 }
 
 /**
- * @brief x 값에 대한 다항식 값을 계산
- * @param t     항 배열
- * @param size  항 개수
- * @param x     대입할 x 값
- * @return      다항식의 결과 (float)
+ * @brief 주어진 x 값에 대한 다항식의 결과값을 계산하는 함수
+ * @param t      계산할 항들이 담긴 배열의 포인터
+ * @param size   배열에 들어있는 항의 총 개수
+ * @param x      다항식에 대입할 정수 값
+ * @return       계산된 다항식의 결과 (float 타입)
  */
 float poly_eval(const Term *t, int size, int x) {
-    // TO FILL
+    // 다항식의 전체 결과값을 누적하여 저장할 변수를 선언하고 0.0으로 초기화합니다.
     float result = 0.0f;
+
+    // for 루프를 통해 다항식의 모든 항을 하나씩 순회합니다.
     for (int i = 0; i < size; i++) {
-        // 계수와 거듭제곱을 더하지 않고 곱하도록 수정
+        // 각 항의 값을 계산하여 'result'에 더해 나갑니다.
+        // 항의 값은 (계수) * (x의 차수 제곱)으로 계산됩니다.
+        // powf()는 float 타입의 거듭제곱 함수로, powf(base, exponent) 형태로 사용됩니다.
+        // 정수 x를 float 타입으로 형변환하여 powf 함수에 전달합니다.
         result += t[i].coef * powf((float)x, t[i].expon);
     }
+
+    // 모든 항의 계산 값을 더한 최종 결과를 반환합니다.
     return result;
-    
-    
 }
 
 int main(void) {
+    // 다항식 A와 B를 가리킬 포인터 변수를 선언하고 NULL로 초기화합니다.
     Term *A = NULL, *B = NULL;
+    // 다항식 A와 B의 항의 개수를 저장할 변수를 선언합니다.
     int sizeA, sizeB;
+    // 다항식에 대입할 변수 x의 값을 저장할 변수를 선언합니다.
     int x;
 
-    // A 다항식 입력
-    // To FILL
+    /* --- A 다항식 정보 입력 --- */
+    // 사용자로부터 다항식 A의 항이 몇 개인지(sizeA)를 입력받습니다.
     scanf("%d", &sizeA);
+    // malloc을 사용해 입력받은 항의 개수만큼 Term 구조체를 저장할 메모리 공간을 동적으로 할당합니다.
+    // 할당된 메모리의 시작 주소를 포인터 A에 저장합니다.
     A = malloc(sizeA * sizeof(Term));
+    // for 루프를 이용해 sizeA번 반복하면서 각 항의 차수(expon)와 계수(coef)를 입력받습니다.
     for (int i = 0; i < sizeA; i++) {
         scanf("%d %f", &A[i].expon, &A[i].coef);
     }
-    // B 다항식 입력
-    // To FILL
+
+    /* --- B 다항식 정보 입력 --- */
+    // 사용자로부터 다항식 B의 항이 몇 개인지(sizeB)를 입력받습니다.
     scanf("%d", &sizeB);
+    // 다항식 B를 저장하기 위해 필요한 만큼의 메모리 공간을 동적으로 할당합니다.
     B = malloc(sizeB * sizeof(Term));
+    // for 루프를 이용해 B의 모든 항 정보를 입력받아 할당된 메모리에 저장합니다.
     for (int i = 0; i < sizeB; i++) {
         scanf("%d %f", &B[i].expon, &B[i].coef);
-    }    
-    // x 값 입력
+    }
+
+    // 다항식에 대입할 정수 x 값을 입력받습니다.
     scanf("%d", &x);
 
-    // 출력: 다항식 A, B
+    /* --- 다항식 출력 --- */
     printf("A(x) = ");
-    print_poly(A, sizeA);
+    print_poly(A, sizeA); // A 다항식을 화면에 출력
 
     printf("B(x) = ");
-    print_poly(B, sizeB);
+    print_poly(B, sizeB); // B 다항식을 화면에 출력
 
-    // 다항식 평가 및 출력
+    /* --- 다항식 값 평가 및 출력 --- */
+    // poly_eval 함수를 호출하여 A(x)의 값을 계산합니다.
     float valA = poly_eval(A, sizeA, x);
+    // poly_eval 함수를 호출하여 B(x)의 값을 계산합니다.
     float valB = poly_eval(B, sizeB, x);
 
+    // 계산된 결과 값을 화면에 출력합니다.
     printf("A(%d) = %f\n", x, valA);
     printf("B(%d) = %f\n", x, valB);
 
-    // 동적 할당 해제
+    /* --- 동적 할당 메모리 해제 --- */
+    // malloc으로 할당했던 메모리는 프로그램 종료 전에 반드시 free로 해제해야 메모리 누수(memory leak)를 막을 수 있습니다.
     free(A);
     free(B);
 
+    // 프로그램이 정상적으로 종료되었음을 운영체제에 알립니다.
     return 0;
 }
