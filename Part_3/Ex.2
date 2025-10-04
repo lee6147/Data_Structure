@@ -1,0 +1,94 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define MAX_TERMS 51
+
+typedef struct {
+    float coef;  // 계수
+    int expon;   // 차수
+} Term;
+
+/**
+ * @brief 다항식을 "계수 x^차수" 형식으로 출력
+ * @param t     항 배열
+ * @param size  항 개수
+ */
+void print_poly(const Term *t, int size) {
+
+    // TO FILL
+    int first = 1;
+    for (int i = 0; i < size; i++) {
+        if (t[i].coef != 0.0f) {
+            if (!first) {
+                printf(" + ");
+            }
+            // 소수점 6자리까지 출력하도록 수정
+            printf("%.6f x^%d", t[i].coef, t[i].expon);
+            first = 0;
+        }
+    }
+    printf("\n");
+}
+
+/**
+ * @brief x 값에 대한 다항식 값을 계산
+ * @param t     항 배열
+ * @param size  항 개수
+ * @param x     대입할 x 값
+ * @return      다항식의 결과 (float)
+ */
+float poly_eval(const Term *t, int size, int x) {
+    // TO FILL
+    float result = 0.0f;
+    for (int i = 0; i < size; i++) {
+        // 계수와 거듭제곱을 더하지 않고 곱하도록 수정
+        result += t[i].coef * powf((float)x, t[i].expon);
+    }
+    return result;
+    
+    
+}
+
+int main(void) {
+    Term *A = NULL, *B = NULL;
+    int sizeA, sizeB;
+    int x;
+
+    // A 다항식 입력
+    // To FILL
+    scanf("%d", &sizeA);
+    A = malloc(sizeA * sizeof(Term));
+    for (int i = 0; i < sizeA; i++) {
+        scanf("%d %f", &A[i].expon, &A[i].coef);
+    }
+    // B 다항식 입력
+    // To FILL
+    scanf("%d", &sizeB);
+    B = malloc(sizeB * sizeof(Term));
+    for (int i = 0; i < sizeB; i++) {
+        scanf("%d %f", &B[i].expon, &B[i].coef);
+    }    
+    // x 값 입력
+    scanf("%d", &x);
+
+    // 출력: 다항식 A, B
+    printf("A(x) = ");
+    print_poly(A, sizeA);
+
+    printf("B(x) = ");
+    print_poly(B, sizeB);
+
+    // 다항식 평가 및 출력
+    float valA = poly_eval(A, sizeA, x);
+    float valB = poly_eval(B, sizeB, x);
+
+    printf("A(%d) = %f\n", x, valA);
+    printf("B(%d) = %f\n", x, valB);
+
+    // 동적 할당 해제
+    free(A);
+    free(B);
+
+    return 0;
+}
