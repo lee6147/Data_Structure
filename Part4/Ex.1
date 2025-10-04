@@ -1,0 +1,87 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_STACK_SIZE 100
+
+typedef int element;
+element data[MAX_STACK_SIZE];
+int top;
+
+void init_stack() { 
+    top = -1; 
+}
+
+int is_empty() { 
+    return (top == -1); 
+}
+
+int is_full() { 
+    return (top == MAX_STACK_SIZE - 1); 
+}
+
+int size() { 
+    return (top + 1); 
+}
+
+void push(element item)
+{
+    if (is_full()) // 스택이 가득 찼는지 확인
+    {
+        // 문제의 요구사항에 따라 가득 찼을 때는 아무것도 하지 않거나
+        // 에러 메시지를 출력할 수 있습니다. 여기서는 에러를 표시합니다.
+        fprintf(stderr, "Stack is full\n"); 
+        return;
+    }
+    else
+    {
+        // top을 먼저 증가시킨 후, 해당 위치에 데이터를 삽입
+        data[++top] = item;
+    }
+}
+
+element pop()
+{
+    if (is_empty()) // 스택이 비어있는지 확인
+        return -1; // 비어있으면 -1 반환
+    // 현재 top 위치의 데이터를 반환한 후, top을 감소
+    return data[top--]; 
+}
+
+element peek()
+{
+    if (is_empty()) // 스택이 비어있는지 확인
+        return -1; // 비어있으면 -1 반환
+    // 현재 top 위치의 데이터를 반환 (top은 변경하지 않음)
+    return data[top];
+}
+
+int main(void)
+{
+    element num;
+    int n;
+    char c[10];
+    scanf("%d", &n);
+    init_stack();
+    for (int i = 0; i < n; i++)
+    {
+        scanf("%s", c);
+
+        if (strcmp(c, "push") == 0)
+        {
+            scanf("%d", &num); // push 명령어 뒤의 정수를 읽음
+            push(num);
+        }
+        else if (strcmp(c, "pop") == 0)
+            printf("%d\n", pop());
+        else if (strcmp(c, "size") == 0)
+            printf("%d\n", size());
+        else if (strcmp(c, "empty") == 0) 
+            printf("%d\n", is_empty());
+        else if (strcmp(c, "peek") == 0)
+            printf("%d\n", peek());
+        else
+            printf("error\n");
+    }
+    return 0;
+}
