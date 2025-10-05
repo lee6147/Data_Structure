@@ -163,14 +163,8 @@ Node* remove_at(Node* head, int at) {
         return head;
     }
     
-    Node* prev = get_entry(head, at - 1);
-    if (prev != NULL && prev->link != NULL) {
-        removed = prev->link;
-        prev->link = removed->link;
-        free(removed);
-    }
-    return head;
 }
+
 
 // 연결 리스트의 모든 요소를 출력
 void print_list(Node* head) {
