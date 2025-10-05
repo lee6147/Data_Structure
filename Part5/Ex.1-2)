@@ -18,17 +18,34 @@ void free_list(Node* head) {
     }
 }
 
-// 연결 리스트 초기화
+/**
+ * @brief 연결 리스트를 초기화합니다.
+ * @param head 현재 리스트의 헤드 포인터.
+ * @return 초기화된 리스트의 헤드 포인터 (항상 NULL).
+ * @details main 함수에서 'Node* head = NULL;'로 이미 초기화가 수행됩니다.
+ * 이 함수는 단순히 NULL을 반환하여 리스트가 비어있음을 명확히 합니다.
+ */
 Node* init_list(Node* head) {
     return NULL;
 }
 
-// 연결 리스트가 비어있는지 확인
+/**
+ * @brief 연결 리스트가 비어있는지 확인합니다.
+ * @param head 리스트의 헤드 포인터.
+ * @return 리스트가 비어있으면 1 (true), 그렇지 않으면 0 (false).
+ * @details 리스트가 비어있는 유일한 조건은 헤드 포인터가 NULL인 경우입니다.
+ */
 int is_empty(Node* head) {
     return head == NULL;
 }
 
-// [단축 버전] 연결 리스트의 크기(노드 개수) 반환
+/**
+ * @brief 연결 리스트의 크기(총 노드의 개수)를 반환합니다. (단축 버전)
+ * @param head 리스트의 헤드 포인터.
+ * @return 리스트에 있는 노드의 총 개수.
+ * @details for 루프를 사용하여 리스트의 처음(head)부터 끝(NULL)까지 순회하며
+ * 각 노드마다 count를 1씩 증가시켜 전체 노드 수를 계산합니다.
+ */
 int get_size(Node* head) {
     int count = 0;
     for (Node* p = head; p != NULL; p = p->link) {
@@ -37,7 +54,15 @@ int get_size(Node* head) {
     return count;
 }
 
-// [단축 버전] 특정 위치(at)에 있는 노드 포인터 반환
+/**
+ * @brief 지정된 위치(at)에 있는 노드의 포인터를 반환합니다. (단축 버전)
+ * @param head 리스트의 헤드 포인터.
+ * @param at 찾고자 하는 노드의 위치 (0부터 시작하는 인덱스).
+ * @return 해당 위치의 노드 포인터. 위치가 유효하지 않으면 NULL.
+ * @details while 루프를 사용하여 포인터 p를 'at'번 만큼 다음 노드로 이동시킵니다.
+ * 'at-- > 0'은 루프를 at번 반복하게 하며, '&& p' 조건은
+ * 이동 중에 리스트의 끝(NULL)에 도달하면 즉시 루프를 중단시켜 오류를 방지합니다.
+ */
 Node* get_entry(Node* head, int at) {
     Node* p = head;
     while (at-- > 0 && p) {
@@ -46,7 +71,15 @@ Node* get_entry(Node* head, int at) {
     return p;
 }
 
-// 특정 위치(at)의 노드 데이터를 data로 교체 후 노드 포인터 반환
+/**
+ * @brief 지정된 위치(at)의 노드 데이터를 주어진 데이터(data)로 교체합니다.
+ * @param head 리스트의 헤드 포인터.
+ * @param at 데이터를 교체할 노드의 위치 (0-based index).
+ * @param data 새로 저장할 데이터.
+ * @return 데이터가 교체된 노드의 포인터. 위치가 유효하지 않으면 NULL.
+ * @details 먼저 get_entry() 함수를 호출하여 해당 위치의 노드를 찾고,
+ * 노드가 존재하면(NULL이 아니면) 해당 노드의 data 멤버를 새로운 데이터로 갱신합니다.
+ */
 Node* replace_at(Node* head, int at, Element data) {
     Node* node_to_replace = get_entry(head, at);
     if (node_to_replace != NULL) {
@@ -55,7 +88,15 @@ Node* replace_at(Node* head, int at, Element data) {
     return node_to_replace;
 }
 
-// [단축 버전] 리스트에서 데이터를 검색하여 해당 위치(인덱스)를 반환
+/**
+ * @brief 리스트에서 특정 데이터(data)를 검색하여 첫 번째로 나타나는 위치(인덱스)를 반환합니다. (단축 버전)
+ * @param head 리스트의 헤드 포인터.
+ * @param data 찾고자 하는 데이터.
+ * @return 데이터가 있는 첫 번째 노드의 인덱스. 데이터를 찾지 못하면 -1.
+ * @details for 루프를 이용해 리스트를 순회하면서 각 노드의 데이터와 찾고자 하는 데이터를 비교합니다.
+ * 일치하는 데이터를 찾으면 현재의 인덱스를 즉시 반환하고,
+ * 리스트 끝까지 순회해도 찾지 못하면 -1을 반환합니다.
+ */
 int search_data(Node* head, Element data) {
     int index = 0;
     for (Node* p = head; p != NULL; p = p->link) {
@@ -65,7 +106,18 @@ int search_data(Node* head, Element data) {
     return -1;
 }
 
-// 특정 위치(at)에 데이터(data)를 삽입
+/**
+ * @brief 지정된 위치(at)에 새로운 노드를 삽입합니다.
+ * @param head 리스트의 헤드 포인터.
+ * @param at 노드를 삽입할 위치 (0-based index). 삽입 가능한 위치는 0부터 리스트 크기까지입니다.
+ * @param data 새로 삽입할 데이터.
+ * @return 삽입이 반영된 리스트의 새로운 헤드 포인터.
+ * @details 1. 삽입 위치(at)가 유효한 범위(0 ~ 리스트 크기)를 벗어나면 아무 작업도 하지 않고 원본 리스트를 반환합니다.
+ * 2. 새 노드를 위한 메모리를 동적 할당하고, 전달받은 data를 저장합니다.
+ * 3. at이 0이면 리스트의 맨 앞에 삽입합니다. 새 노드의 link가 기존 head를 가리키고, 새 노드가 새로운 head가 됩니다.
+ * 4. at이 0보다 크면, 삽입할 위치의 '이전 노드'(at-1)를 찾습니다.
+ * 5. 이전 노드의 link를 새 노드에 연결하고, 새 노드의 link를 이전 노드가 가리키던 다음 노드에 연결합니다.
+ */
 Node* insert_at(Node* head, int at, Element data) {
     if (at < 0 || at > get_size(head)) {
         return head;
@@ -87,7 +139,17 @@ Node* insert_at(Node* head, int at, Element data) {
     return head;
 }
 
-// 특정 위치(at)의 노드를 삭제
+/**
+ * @brief 지정된 위치(at)의 노드를 삭제합니다.
+ * @param head 리스트의 헤드 포인터.
+ * @param at 삭제할 노드의 위치 (0-based index).
+ * @return 삭제가 반영된 리스트의 새로운 헤드 포인터.
+ * @details 1. 리스트가 비어있거나 삭제 위치(at)가 유효 범위(0 ~ 리스트 크기-1)를 벗어나면 아무 작업도 하지 않고 원본 리스트를 반환합니다.
+ * 2. at이 0이면 헤드 노드를 삭제합니다. head 포인터를 다음 노드로 옮기고, 이전 head 노드의 메모리를 해제합니다.
+ * 3. at이 0보다 크면, 삭제할 노드의 '이전 노드'(at-1)를 찾습니다.
+ * 4. 이전 노드의 link가 삭제할 노드의 다음 노드(removed->link)를 가리키도록 하여 삭제할 노드를 리스트에서 제외시킵니다.
+ * 5. 마지막으로, 제외된 노드(removed)의 메모리를 해제합니다.
+ */
 Node* remove_at(Node* head, int at) {
     if (is_empty(head) || at < 0 || at >= get_size(head)) {
         return head;
