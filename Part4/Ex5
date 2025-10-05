@@ -1,0 +1,104 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_QUEUE_SIZE 100
+#define Element int
+
+Element data[MAX_QUEUE_SIZE];
+
+int front; // 첫번째 요소의 바로 앞 인덱스
+int rear;  // 마지막 요소를 가리키는 인덱스
+
+void error(char* str)
+{
+    fprintf(stderr, "%s\n", str);
+    exit(1);
+};
+
+void init_deque() { front = rear = 0; }
+
+int is_empty() { return front == rear; }
+
+int is_full() { return ((rear + 1) % MAX_QUEUE_SIZE) == front; }
+
+int size() { return (rear - front + MAX_QUEUE_SIZE) % MAX_QUEUE_SIZE; }
+
+void add_front(Element val)
+{
+    if (is_full())
+        error(" 덱 포화 에러");
+    // 오류 1: 배열 이름 수정 (deque -> data)
+    data[front] = val;
+    // 오류 2: 대괄호[] -> 소괄호() 문법 오류 수정
+    front = (front - 1 + MAX_QUEUE_SIZE) % MAX_QUEUE_SIZE;
+}
+
+void add_rear(Element val) {
+    if (is_full())
+        error("FULL error");
+    rear = (rear + 1) % MAX_QUEUE_SIZE;
+    // 오류 1: 배열 이름 수정 (deque -> data)
+    data[rear] = val;
+}
+
+Element delete_front() {
+    if (is_empty())
+        error("Empty error");
+    front = (front + 1) % MAX_QUEUE_SIZE;
+    // 오류 1: 배열 이름 수정 (deque -> data)
+    return data[front];
+}
+
+Element get_front() {
+    // 오류 3: 'return if()'는 잘못된 문법이므로 표준 if문으로 수정
+    if (is_empty())
+        error("Empty error");
+    // 오류 1: 배열 이름 수정 (deque -> data)
+    return data[(front + 1) % MAX_QUEUE_SIZE];
+}
+
+Element delete_rear()
+{
+    Element val;
+    if (is_empty())
+        error(" 덱 공백 에러");
+    // 오류 1: 배열 이름 수정 (deque -> data)
+    val = data[rear];
+    rear = (rear - 1 + MAX_QUEUE_SIZE) % MAX_QUEUE_SIZE;
+    return val;
+}
+
+Element get_rear() {
+    if (is_empty())
+        error(" 덱 공백 에러");
+    // 오류 1: 배열 이름 수정 (deque -> data)
+    return data[rear];
+}
+
+int main(void)
+{
+    Element num;
+    int n;
+    char c[15];
+    init_deque();
+    scanf("%d", &n);
+    for (int i = 0; i < n; i++)
+    {
+        scanf("%s", c);
+
+        // 오류 4: scanf에서 불필요한 \n 제거
+        if (strcmp(c, "addfront") == 0) { scanf("%d", &num); add_front(num); }
+        else if (strcmp(c, "deletefront") == 0)printf("%d\n", delete_front());
+        // 오류 4: scanf에서 불필요한 \n 제거
+        else if (strcmp(c, "addrear") == 0) { scanf("%d", &num); add_rear(num); }
+        else if (strcmp(c, "deleterear") == 0)printf("%d\n", delete_rear());
+        else if (strcmp(c, "getfront") == 0)printf("%d\n", get_front());
+        else if (strcmp(c, "getrear") == 0)printf("%d\n", get_rear());
+        else if (strcmp(c, "size") == 0) printf("%d\n", size());
+        else if (strcmp(c, "empty") == 0)printf("%d\n", is_empty());
+        else if (strcmp(c, "full") == 0)printf("%d\n", is_full());
+        else printf("error\n");
+    }
+    return 0;
+}
