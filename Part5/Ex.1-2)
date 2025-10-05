@@ -131,12 +131,6 @@ Node* insert_at(Node* head, int at, Element data) {
         return new_node;
     }
     
-    Node* prev = get_entry(head, at - 1);
-    if (prev != NULL) {
-        new_node->link = prev->link;
-        prev->link = new_node;
-    }
-    return head;
 }
 
 /**
