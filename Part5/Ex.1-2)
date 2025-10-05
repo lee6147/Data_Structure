@@ -1,0 +1,173 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef int Element;     // 연결 리스트의 요소 타입 정의
+typedef struct LinkedNode {
+    Element data;              // 노드의 데이터
+    struct LinkedNode* link;   // 다음 노드를 가리키는 포인터
+} Node;
+
+// 연결 리스트의 모든 노드 메모리를 해제하는 함수
+void free_list(Node* head) {
+    Node* current = head;
+    while (current != NULL) {
+        Node* temp = current;
+        current = current->link;
+        free(temp);
+    }
+}
+
+// 연결 리스트 초기화
+Node* init_list(Node* head) {
+    return NULL;
+}
+
+// 연결 리스트가 비어있는지 확인
+int is_empty(Node* head) {
+    return head == NULL;
+}
+
+// [단축 버전] 연결 리스트의 크기(노드 개수) 반환
+int get_size(Node* head) {
+    int count = 0;
+    for (Node* p = head; p != NULL; p = p->link) {
+        count++;
+    }
+    return count;
+}
+
+// [단축 버전] 특정 위치(at)에 있는 노드 포인터 반환
+Node* get_entry(Node* head, int at) {
+    Node* p = head;
+    while (at-- > 0 && p) {
+        p = p->link;
+    }
+    return p;
+}
+
+// 특정 위치(at)의 노드 데이터를 data로 교체 후 노드 포인터 반환
+Node* replace_at(Node* head, int at, Element data) {
+    Node* node_to_replace = get_entry(head, at);
+    if (node_to_replace != NULL) {
+        node_to_replace->data = data;
+    }
+    return node_to_replace;
+}
+
+// [단축 버전] 리스트에서 데이터를 검색하여 해당 위치(인덱스)를 반환
+int search_data(Node* head, Element data) {
+    int index = 0;
+    for (Node* p = head; p != NULL; p = p->link) {
+        if (p->data == data) return index;
+        index++;
+    }
+    return -1;
+}
+
+// 특정 위치(at)에 데이터(data)를 삽입
+Node* insert_at(Node* head, int at, Element data) {
+    if (at < 0 || at > get_size(head)) {
+        return head;
+    }
+
+    Node* new_node = (Node*)malloc(sizeof(Node));
+    new_node->data = data;
+
+    if (at == 0) {
+        new_node->link = head;
+        return new_node;
+    }
+    
+    Node* prev = get_entry(head, at - 1);
+    if (prev != NULL) {
+        new_node->link = prev->link;
+        prev->link = new_node;
+    }
+    return head;
+}
+
+// 특정 위치(at)의 노드를 삭제
+Node* remove_at(Node* head, int at) {
+    if (is_empty(head) || at < 0 || at >= get_size(head)) {
+        return head;
+    }
+
+    Node* removed;
+    if (at == 0) {
+        removed = head;
+        head = head->link;
+        free(removed);
+        return head;
+    }
+    
+    Node* prev = get_entry(head, at - 1);
+    if (prev != NULL && prev->link != NULL) {
+        removed = prev->link;
+        prev->link = removed->link;
+        free(removed);
+    }
+    return head;
+}
+
+// 연결 리스트의 모든 요소를 출력
+void print_list(Node* head) {
+    Node* p;
+    for (p = head; p != NULL; p = p->link) printf("%d->", p->data);
+    printf("NULL\n");
+}
+
+int main() {
+    int i, n, m, data;
+    char c[20];
+    Node *head = NULL;
+    head = init_list(head);
+
+    // 각 연결 리스트가 수행할 명령어의 수
+    scanf("%d %d", &n, &m);
+
+    // 첫번째 연결 리스트 명령 수행
+    for (i = 0; i < n; i++) {
+        int at, data;
+        scanf("%s", c);
+        if (strcmp(c, "empty") == 0) {
+            printf("%d\n", is_empty(head));
+        } else if (strcmp(c, "size") == 0) {
+            printf("%d\n", get_size(head));
+        } else if (strcmp(c, "getentry") == 0) {
+            scanf("%d", &at);
+            Node* entry = get_entry(head, at);
+            if (entry != NULL)
+                printf("%d\n", entry->data);
+            else
+                printf("Invalid position\n");
+        } else if (strcmp(c, "replace") == 0) {
+            scanf("%d %d", &at, &data);
+            Node* replaced = replace_at(head, at, data);
+            if (replaced != NULL)
+                printf("%d\n", replaced->data);
+            else
+                printf("Invalid position\n");
+        } else if (strcmp(c, "search") == 0) {
+            scanf("%d", &data);
+            int pos = search_data(head, data);
+            if (pos != -1)
+                printf("Found at position %d\n", pos);
+            else
+                printf("Not found\n");
+        } else if (strcmp(c, "insert") == 0) {
+            scanf("%d %d", &at, &data);
+            head = insert_at(head, at, data);
+            print_list(head);
+        } else if (strcmp(c, "remove") == 0) {
+            scanf("%d", &at);
+            head = remove_at(head, at);
+            print_list(head);
+        } else
+            printf("error\n");
+    }
+
+    free_list(head);
+
+    return 0;
+}
