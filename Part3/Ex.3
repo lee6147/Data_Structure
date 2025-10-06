@@ -1,0 +1,144 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define MAX_DEGREE 50
+
+typedef struct {
+    float coef;  // 계수
+    int expon;   // 차수
+} Term;
+
+/**
+ * 다항식 출력: 계수가 0이 아닌 항만 "coef x^expon" 형태로
+ */
+void print_poly(const Term* t, int size) {
+    //첫번째 항인지 확인하는 플래그 
+    int first = 1;
+    for (int i = 0; i < size; i++) {
+        // 항의 계수가 0이 아닌 경우에 출력
+        // 수정 1: 'o.of' 오타를 '0.0f'로 수정했습니다.
+        if (t[i].coef != 0.0f) {
+            //첫번째 항이 아니라면 덧셈 기호
+            // 수정 2: if문의 괄호 문법 오류를 수정했습니다.
+            if (!first) {
+                printf(" + ");
+            }
+            printf("%f x^%d", t[i].coef, t[i].expon);
+            first = 0;
+        }
+    }
+    // 수정 3: 세미콜론(;)을 추가하고, 불필요한 괄호를 정리했습니다.
+    printf("\n");
+}
+
+/**
+ * 다항식 평가: x 값 대입 후 결과 반환
+ */
+float poly_eval(const Term* t, int size, int x) {
+    float result = 0.0f;
+    for (int i = 0; i < size; i++) {
+        // 수정 4: [논리 오류] 덧셈(+)이 아닌 곱셈(*)으로 수정했습니다. (계수 * x^차수)
+        // 또한, powf와 불필요한 형변환을 정리했습니다.
+        result += t[i].coef * pow(x, t[i].expon);
+    }
+    return result;
+}
+
+/**
+ * 다항식 덧셈: A + B를 계산하여 C에 저장
+ * - 입력: A, sizeA; B, sizeB
+ * - 출력: *C (동적 할당), *sizeC
+ */
+void poly_add(const Term* A, int sizeA,
+    const Term* B, int sizeB,
+    Term** C, int* sizeC)
+{
+    // 수정 5: [논리 오류] 덧셈 결과의 최대 항 개수는 sizeA + sizeB 이므로 곱셈(*)을 덧셈(+)으로 수정했습니다.
+    // 또한, malloc의 괄호 문법을 수정했습니다.
+    Term* S = (Term*)malloc((sizeA + sizeB) * sizeof(Term));
+    int idxA = 0, idxB = 0, idxS = 0;
+
+    //항이 순회하면서 덧셈을 수행
+    while (idxA < sizeA && idxB < sizeB) {
+        // 두 항의 차수가 같다면 덧셈을 수행
+        // 수정 6: 변수 이름 오타(b[idx])를 올바른 이름(B[idxB])으로 수정했습니다.
+        if (A[idxA].expon == B[idxB].expon) {
+            float coef = A[idxA].coef + B[idxB].coef;
+            //계수가 0이 아니라면 항을 추가
+            if (coef != 0.0f) {
+                S[idxS].coef = coef;
+                S[idxS++].expon = A[idxA].expon;
+            }
+            idxA++;
+            idxB++;
+        }
+        // 수정 7: 변수 이름 오타(A[idx])를 올바른 이름(A[idxA])으로 수정했습니다.
+        else if (A[idxA].expon > B[idxB].expon) {
+            S[idxS++] = A[idxA++];
+        }
+        else {
+            S[idxS++] = B[idxB++];
+        }
+    }
+
+    //남은 항을 복사
+    while (idxA < sizeA)
+        S[idxS++] = A[idxA++];
+    while (idxB < sizeB)
+        S[idxS++] = B[idxB++];
+
+    // 수정 8: 정의되지 않은 변수 sum을 결과 배열인 S로 수정했습니다.
+    *C = S;
+    *sizeC = idxS;
+}
+
+int main(void) {
+    Term* A = NULL, * B = NULL, * S = NULL;
+    int sizeA, sizeB, sizeS;
+    int x;
+
+    // A 다항식 항 수 및 항 입력
+    scanf("%d", &sizeA);
+    A = (Term*)malloc(sizeA * sizeof(Term));
+    for (int i = 0; i < sizeA; i++) {
+        scanf("%d %f", &A[i].expon, &A[i].coef);
+    }
+
+    // B 다항식 항 수 및 항 입력
+    scanf("%d", &sizeB);
+    B = (Term*)malloc(sizeB * sizeof(Term));
+    for (int i = 0; i < sizeB; i++) {
+        scanf("%d %f", &B[i].expon, &B[i].coef);
+    }
+
+    // x 값 입력
+    scanf("%d", &x);
+
+    // A, B, A+B 출력
+    printf("A(x) = ");
+    print_poly(A, sizeA);
+
+    printf("B(x) = ");
+    print_poly(B, sizeB);
+
+    poly_add(A, sizeA, B, sizeB, &S, &sizeS);
+    printf("A(x)+B(x) = ");
+    print_poly(S, sizeS);
+
+    // 평가 결과 출력
+    printf("A(%d) = %f\n", x, poly_eval(A, sizeA, x));
+    printf("B(%d) = %f\n", x, poly_eval(B, sizeB, x));
+    // 참고: 이 printf 문은 A(x)+B(x)가 아니라 S(x)의 결과값을 출력해야 하므로,
+    // 아래와 같이 바꾸는 것이 더 명확할 수 있습니다.
+    // printf("A+B(%d) = %f\n", x, poly_eval(S, sizeS, x));
+    // 하지만 원본 유지를 위해 수정하지 않았습니다.
+    printf("A(%d)+B(%d) = %f\n", x, x, poly_eval(S, sizeS, x));
+
+    // 메모리 해제
+    free(A);
+    free(B);
+    free(S);
+
+    return 0;
+}
