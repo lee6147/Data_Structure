@@ -10,104 +10,140 @@ typedef struct {
 } Term;
 
 /**
- * 다항식 출력: 계수가 0이 아닌 항만 "coef x^expon" 형태로
+ * @brief 다항식을 "계수 x^차수" 형태로 출력합니다.
+ * @param t 출력할 다항식 배열의 포인터
+ * @param size 다항식의 항 개수
  */
-void print_poly(const Term* t, int size) {
-    //첫번째 항인지 확인하는 플래그 
-    int first = 1;
+void print_poly(const Term *t, int size) {
+    // for 루프를 이용해 다항식의 모든 항을 하나씩 순회합니다.
     for (int i = 0; i < size; i++) {
-        // 항의 계수가 0이 아닌 경우에 출력
-        // 수정 1: 'o.of' 오타를 '0.0f'로 수정했습니다.
-        if (t[i].coef != 0.0f) {
-            //첫번째 항이 아니라면 덧셈 기호
-            // 수정 2: if문의 괄호 문법 오류를 수정했습니다.
-            if (!first) {
-                printf(" + ");
-            }
-            printf("%f x^%d", t[i].coef, t[i].expon);
-            first = 0;
+        // "계수 x^차수" 형식으로 현재 항을 출력합니다.
+        // 예: 2.000000 x^1
+        printf("%f x^%d", t[i].coef, t[i].expon);
+        
+        // 현재 항이 마지막 항이 아니라면, 다음 항과의 구분을 위해 " + "를 출력합니다.
+        if (i < size - 1) {
+            printf(" + ");
         }
     }
-    // 수정 3: 세미콜론(;)을 추가하고, 불필요한 괄호를 정리했습니다.
+    // 다항식 출력이 모두 끝나면 줄바꿈을 해줍니다.
     printf("\n");
 }
 
 /**
- * 다항식 평가: x 값 대입 후 결과 반환
+ * @brief 주어진 x 값에 대한 다항식의 결과값을 계산합니다.
+ * @param t 계산할 다항식 배열의 포인터
+ * @param size 다항식의 항 개수
+ * @param x 다항식에 대입할 정수 값
+ * @return 계산된 최종 결과 (실수)
  */
-float poly_eval(const Term* t, int size, int x) {
-    float result = 0.0f;
+float poly_eval(const Term *t, int size, int x) {
+    // 최종 결과값을 저장할 변수를 0.0으로 초기화합니다.
+    float result = 0.0;
+    
+    // 다항식의 모든 항을 순회하며 값을 계산합니다.
     for (int i = 0; i < size; i++) {
-        // 수정 4: [논리 오류] 덧셈(+)이 아닌 곱셈(*)으로 수정했습니다. (계수 * x^차수)
-        // 또한, powf와 불필요한 형변환을 정리했습니다.
+        // 현재 항의 값을 계산합니다: (계수) * (x ^ 차수)
+        // pow() 함수는 <math.h>에 있으며, 거듭제곱을 계산해줍니다. (예: pow(5, 2)는 5의 2제곱)
+        // 계산된 값을 result 변수에 계속 더해나갑니다.
         result += t[i].coef * pow(x, t[i].expon);
     }
+    
+    // 모든 항의 계산이 끝나면 최종적으로 더해진 값을 반환합니다.
     return result;
 }
 
 /**
- * 다항식 덧셈: A + B를 계산하여 C에 저장
- * - 입력: A, sizeA; B, sizeB
- * - 출력: *C (동적 할당), *sizeC
+ * @brief 두 다항식 A와 B를 더해 새로운 다항식 C를 만듭니다.
+ * @param A 첫 번째 다항식 배열
+ * @param sizeA A 다항식의 항 개수
+ * @param B 두 번째 다항식 배열
+ * @param sizeB B 다항식의 항 개수
+ * @param C 결과 다항식을 저장할 포인터의 주소 (이중 포인터)
+ * @param sizeC 결과 다항식의 항 개수를 저장할 변수의 주소 (포인터)
  */
-void poly_add(const Term* A, int sizeA,
-    const Term* B, int sizeB,
-    Term** C, int* sizeC)
+void poly_add(const Term *A, int sizeA,
+              const Term *B, int sizeB,
+              Term **C, int *sizeC)
 {
-    // 수정 5: [논리 오류] 덧셈 결과의 최대 항 개수는 sizeA + sizeB 이므로 곱셈(*)을 덧셈(+)으로 수정했습니다.
-    // 또한, malloc의 괄호 문법을 수정했습니다.
-    Term* S = (Term*)malloc((sizeA + sizeB) * sizeof(Term));
-    int idxA = 0, idxB = 0, idxS = 0;
+    // 각 다항식의 현재 위치를 가리킬 인덱스 변수들을 0으로 초기화합니다.
+    int idxA = 0, idxB = 0, idxC = 0;
+    
+    // 덧셈 결과를 임시로 저장할 배열을 동적 할당합니다.
+    // 결과 다항식의 항 개수는 최대 (A의 항 개수 + B의 항 개수)를 넘지 않습니다.
+    Term* tempC = malloc((sizeA + sizeB) * sizeof(Term));
 
-    //항이 순회하면서 덧셈을 수행
+    // A와 B 다항식 양쪽에 처리할 항이 남아있는 동안 반복합니다.
     while (idxA < sizeA && idxB < sizeB) {
-        // 두 항의 차수가 같다면 덧셈을 수행
-        // 수정 6: 변수 이름 오타(b[idx])를 올바른 이름(B[idxB])으로 수정했습니다.
-        if (A[idxA].expon == B[idxB].expon) {
-            float coef = A[idxA].coef + B[idxB].coef;
-            //계수가 0이 아니라면 항을 추가
-            if (coef != 0.0f) {
-                S[idxS].coef = coef;
-                S[idxS++].expon = A[idxA].expon;
+        // A항의 차수가 B항의 차수보다 높을 경우
+        if (A[idxA].expon > B[idxB].expon) {
+            // 더할 항이 없으므로 A의 항을 그대로 임시 결과 배열에 복사합니다.
+            tempC[idxC++] = A[idxA++];
+        } 
+        // B항의 차수가 A항의 차수보다 높을 경우
+        else if (A[idxA].expon < B[idxB].expon) {
+            // 더할 항이 없으므로 B의 항을 그대로 임시 결과 배열에 복사합니다.
+            tempC[idxC++] = B[idxB++];
+        } 
+        // 두 항의 차수가 같을 경우
+        else {
+            // 두 계수를 더합니다.
+            float sum_coef = A[idxA].coef + B[idxB].coef;
+            
+            // 계수의 합이 0이 아닐 때만 결과 항으로 만듭니다. (예: 5x^2와 -5x^2를 더하면 0이므로 항이 사라짐)
+            if (sum_coef != 0) {
+                tempC[idxC].coef = sum_coef;
+                tempC[idxC].expon = A[idxA].expon;
+                idxC++; // 결과 배열의 인덱스를 1 증가시킵니다.
             }
+            // 비교가 끝난 A와 B의 항은 다음으로 넘어갑니다.
             idxA++;
             idxB++;
         }
-        // 수정 7: 변수 이름 오타(A[idx])를 올바른 이름(A[idxA])으로 수정했습니다.
-        else if (A[idxA].expon > B[idxB].expon) {
-            S[idxS++] = A[idxA++];
-        }
-        else {
-            S[idxS++] = B[idxB++];
-        }
     }
 
-    //남은 항을 복사
-    while (idxA < sizeA)
-        S[idxS++] = A[idxA++];
-    while (idxB < sizeB)
-        S[idxS++] = B[idxB++];
+    // 위 반복문이 끝난 후, A 다항식에 아직 항이 남아있다면
+    // 남은 항들을 모두 임시 결과 배열에 복사합니다.
+    while (idxA < sizeA) {
+        tempC[idxC++] = A[idxA++];
+    }
+    // B 다항식에 아직 항이 남아있다면
+    // 남은 항들을 모두 임시 결과 배열에 복사합니다.
+    while (idxB < sizeB) {
+        tempC[idxC++] = B[idxB++];
+    }
 
-    // 수정 8: 정의되지 않은 변수 sum을 결과 배열인 S로 수정했습니다.
-    *C = S;
-    *sizeC = idxS;
+    // 최종적으로 만들어진 결과 다항식의 항 개수를 main 함수의 변수에 저장합니다.
+    // 포인터 변수 sizeC가 가리키는 곳에 idxC 값을 저장합니다.
+    *sizeC = idxC;
+    
+    // 최종 항 개수(idxC)에 딱 맞는 크기로 메모리를 새로 할당하여 main 함수의 포인터 C가 가리키게 합니다.
+    *C = malloc(*sizeC * sizeof(Term));
+    
+    // 임시 배열(tempC)에 저장했던 최종 결과를 C 배열로 복사합니다.
+    for (int i = 0; i < *sizeC; i++) {
+        (*C)[i] = tempC[i];
+    }
+    
+    // 임시로 사용했던 배열의 메모리를 해제하여 메모리 누수를 방지합니다.
+    free(tempC);
 }
 
 int main(void) {
-    Term* A = NULL, * B = NULL, * S = NULL;
+    Term *A = NULL, *B = NULL, *S = NULL;
     int sizeA, sizeB, sizeS;
     int x;
 
     // A 다항식 항 수 및 항 입력
     scanf("%d", &sizeA);
-    A = (Term*)malloc(sizeA * sizeof(Term));
+    A = malloc(sizeA * sizeof(Term));
     for (int i = 0; i < sizeA; i++) {
         scanf("%d %f", &A[i].expon, &A[i].coef);
     }
 
     // B 다항식 항 수 및 항 입력
     scanf("%d", &sizeB);
-    B = (Term*)malloc(sizeB * sizeof(Term));
+    B = malloc(sizeB * sizeof(Term));
     for (int i = 0; i < sizeB; i++) {
         scanf("%d %f", &B[i].expon, &B[i].coef);
     }
@@ -129,10 +165,6 @@ int main(void) {
     // 평가 결과 출력
     printf("A(%d) = %f\n", x, poly_eval(A, sizeA, x));
     printf("B(%d) = %f\n", x, poly_eval(B, sizeB, x));
-    // 참고: 이 printf 문은 A(x)+B(x)가 아니라 S(x)의 결과값을 출력해야 하므로,
-    // 아래와 같이 바꾸는 것이 더 명확할 수 있습니다.
-    // printf("A+B(%d) = %f\n", x, poly_eval(S, sizeS, x));
-    // 하지만 원본 유지를 위해 수정하지 않았습니다.
     printf("A(%d)+B(%d) = %f\n", x, x, poly_eval(S, sizeS, x));
 
     // 메모리 해제
