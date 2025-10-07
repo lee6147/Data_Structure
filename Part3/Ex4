@@ -1,0 +1,120 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// 행렬의 한 원소의 정보를 표현하는 구조체
+typedef struct {
+    int row;    // 행 인덱스
+    int col;    // 열 인덱스
+    int value;  // 해당 위치의 값
+} Term;
+
+// 희소행렬을 표현하는 구조체
+typedef struct {
+    int rows;    // 행렬 크기 n
+    int terms;   // 비제로 항 개수
+    Term *data;  // 비제로 항 배열
+} SparseMatrix;
+
+/**
+ * @brief 힙 메모리에 n×n 행렬을 0으로 초기화한 뒤 비제로 항만 채워 출력
+ */
+void print_matrix(const SparseMatrix *a) {
+    int n = a->rows;
+    int *mat = malloc(n * n * sizeof(int));
+    if (!mat) {
+        perror("메모리 할당 실패");
+        return;
+    }
+
+    // 1) 0으로 초기화
+    for (int i = 0; i < n * n; i++) {
+        mat[i] = 0;
+    }
+
+    // 2) 비제로 항만 채워넣기
+    for (int k = 0; k < a->terms; k++) {
+        int r = a->data[k].row;
+        int c = a->data[k].col;
+        mat[r * n + c] = a->data[k].value;
+    }
+
+    // 3) 한 번에 출력
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            printf("%3d", mat[i * n + j]);
+        }
+        putchar('\n');
+    }
+    putchar('\n');
+
+    free(mat);
+}
+
+/**
+ * 전치 행렬 생성
+ */
+SparseMatrix transpose(const SparseMatrix *a) {
+    SparseMatrix t;
+    // TO FILL
+    // 원본행렬의 크기와 항의 개수를 복사
+    t.rows = a->rows;
+    t.terms = a->terms;
+    
+    // 항의 개수만큼 동적 할당 (★★★ 수정된 부분 ★★★)
+    t.data = malloc(a->terms * sizeof(Term)); 
+    if (!t.data) {
+        printf("프로그램을 종료");
+        exit(1);
+    }
+    
+    for (int i = 0; i < a->terms; i++) {
+        
+        t.data[i].row = a->data[i].col;
+        t.data[i].col = a->data[i].row;
+        t.data[i].value = a->data[i].value;
+        
+    }
+    
+    return t;
+}
+
+
+int main(void) {
+    int n, num;
+    if (scanf("%d %d", &n, &num) != 2) {
+        fprintf(stderr, "입력 오류\n");
+        return 1;
+    }
+
+    SparseMatrix M;
+    M.rows  = n;
+    M.terms = num;
+    M.data  = malloc(num * sizeof(Term));
+    if (!M.data) {
+        perror("메모리 할당 실패");
+        return 1;
+    }
+
+    for (int i = 0; i < num; i++) {
+        if (scanf("%d %d %d",
+                  &M.data[i].row,
+                  &M.data[i].col,
+                  &M.data[i].value) != 3) {
+            fprintf(stderr, "입력 형식 오류\n");
+            free(M.data);
+            return 1;
+        }
+    }
+
+    // 1) 원본 출력
+    print_matrix(&M);
+
+    // 2) 전치 생성 및 출력
+    SparseMatrix T = transpose(&M);
+    print_matrix(&T);
+
+    // 해제
+    free(M.data);
+    free(T.data);
+    return 0;
+}
