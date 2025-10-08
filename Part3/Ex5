@@ -1,0 +1,210 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// 희소 행렬에 있는 '0이 아닌 항' 하나를 표현하는 구조체
+typedef struct {
+    int row;     // 행 인덱스
+    int col;     // 열 인덱스
+    int value;   // 값
+} Term;
+
+// 희소 행렬 전체를 표현하는 구조체
+typedef struct {
+    int rows;    // 행렬의 전체 크기 (n x n)
+    int terms;   // 0이 아닌 항(Term)의 개수
+    Term *data;  // 0이 아닌 항들을 저장할 배열 (포인터)
+} SparseMatrix;
+
+/**
+ * 힙 메모리에 n×n 행렬을 0으로 초기화한 뒤 비제로 항만 채워 출력
+ */
+void print_matrix(const SparseMatrix *a) {
+    int n = a->rows;
+    int *mat = malloc(n * n * sizeof(int));
+
+    // 1) 0으로 초기화
+    for (int i = 0; i < n * n; i++) {
+        mat[i] = 0;
+    }
+
+    // 2) 비제로 항만 채워넣기
+    for (int k = 0; k < a->terms; k++) {
+        int r = a->data[k].row;
+        int c = a->data[k].col;
+        mat[r * n + c] = a->data[k].value;
+    }
+
+    // 3) 한 번에 출력
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            printf("%3d", mat[i * n + j]);
+        }
+        putchar('\n');
+    }
+    putchar('\n');
+
+    free(mat);
+}
+
+/**
+ * 전치 행렬 생성
+ */
+SparseMatrix transpose(const SparseMatrix *a) {
+    SparseMatrix t;
+    // ===== START: To Fill (상세 주석 추가) =====
+
+    // 1. 반환할 전치 행렬(t)의 기본 정보를 설정합니다.
+    //    행렬 크기(rows)와 0이 아닌 항의 개수(terms)는 원본 행렬(a)과 동일합니다.
+    t.rows = a->rows;
+    t.terms = a->terms;
+
+    // 2. 전치 행렬의 항들을 저장할 메모리를 동적으로 할당합니다.
+    t.data = (Term *)malloc(a->terms * sizeof(Term));
+    if (!t.data) { // 메모리 할당에 실패하면 프로그램을 종료합니다.
+        perror("transpose: 메모리 할당 실패");
+        exit(1);
+    }
+
+    // 3. 0이 아닌 항이 하나라도 있을 경우에만 전치 연산을 수행합니다.
+    if (a->terms > 0) {
+        int t_idx = 0; // 전치 행렬 t의 data 배열에 항을 채워나갈 현재 인덱스입니다.
+
+        // 4. [핵심] 전치 행렬의 항들을 '행' 순서대로 정렬하기 위해,
+        //    원본 행렬의 '열'을 0부터 끝까지 순회합니다.
+        for (int c = 0; c < a->rows; c++) {
+            // 5. 원본 행렬의 모든 항을 스캔하여...
+            for (int i = 0; i < a->terms; i++) {
+                // ...현재 찾고 있는 열(c)에 해당하는 항이 있는지 확인합니다.
+                if (a->data[i].col == c) {
+                    // 6. 찾았다면, 해당 항의 행과 열을 뒤바꿔서 전치 행렬에 저장합니다.
+                    t.data[t_idx].row = a->data[i].col;   // 원본의 열 -> 새 행
+                    t.data[t_idx].col = a->data[i].row;   // 원본의 행 -> 새 열
+                    t.data[t_idx].value = a->data[i].value; // 값은 그대로 복사
+                    
+                    // 7. 전치 행렬에 항 하나를 채웠으므로, 다음 위치를 가리키도록 인덱스를 증가시킵니다.
+                    t_idx++;
+                }
+            }
+        }
+    }
+    // ===== END: To Fill (상세 주석 추가) =====
+    return t;
+}
+
+/**
+ * 두 희소행렬 A, B를 더해 새로운 희소행렬 S를 반환
+ * 같은 위치의 항은 값을 합산하고, 0이 되면 생략.
+ */
+SparseMatrix add_sparse(const SparseMatrix *A, const SparseMatrix *B) {
+    // ===== START: To Fill (상세 주석 추가) =====
+    SparseMatrix S; // 1. 덧셈 결과를 저장할 희소 행렬 S를 선언합니다.
+    S.rows = A->rows; // 행렬 크기는 A와 동일합니다.
+
+    // 2. 결과 행렬 S의 항들을 저장할 메모리를 할당합니다.
+    //    항의 개수는 최대 (A의 항 개수 + B의 항 개수)가 될 수 있으므로 넉넉하게 할당합니다.
+    S.data = (Term *)malloc((A->terms + B->terms) * sizeof(Term));
+    if (!S.data) { // 메모리 할당에 실패하면 프로그램을 종료합니다.
+        perror("add_sparse: 메모리 할당 실패");
+        exit(1);
+    }
+
+    // 3. 각 행렬의 항을 가리킬 인덱스를 선언합니다.
+    int a_idx = 0; // A 행렬의 현재 항 인덱스
+    int b_idx = 0; // B 행렬의 현재 항 인덱스
+    int s_idx = 0; // 결과 행렬 S의 현재 항 인덱스
+    int n = A->rows;
+
+    // 4. [핵심] 두 행렬 중 하나의 항이라도 끝에 도달할 때까지 반복합니다. (정렬된 리스트 병합 원리)
+    while (a_idx < A->terms && b_idx < B->terms) {
+        // 5. 위치 비교를 위해 (행, 열) 좌표를 하나의 정수로 변환합니다. (예: (1, 2) -> 1*n+2)
+        int pos_a = A->data[a_idx].row * n + A->data[a_idx].col;
+        int pos_b = B->data[b_idx].row * n + B->data[b_idx].col;
+
+        if (pos_a < pos_b) {
+            // A의 항이 더 앞선 위치에 있으면, A의 항을 그대로 결과 행렬 S에 복사합니다.
+            S.data[s_idx++] = A->data[a_idx++];
+        } else if (pos_a > pos_b) {
+            // B의 항이 더 앞선 위치에 있으면, B의 항을 그대로 결과 행렬 S에 복사합니다.
+            S.data[s_idx++] = B->data[b_idx++];
+        } else {
+            // 두 항의 위치가 같으면, 두 값을 더합니다.
+            int sum = A->data[a_idx].value + B->data[b_idx].value;
+            if (sum != 0) { // 합계가 0이 아닐 경우에만 결과 행렬 S에 추가합니다.
+                S.data[s_idx].row = A->data[a_idx].row;
+                S.data[s_idx].col = A->data[a_idx].col;
+                S.data[s_idx].value = sum;
+                s_idx++;
+            }
+            // 두 항을 모두 처리했으므로, A와 B의 인덱스를 둘 다 증가시킵니다.
+            a_idx++;
+            b_idx++;
+        }
+    }
+
+    // 6. 위 while문이 끝난 후, A나 B에 아직 항이 남아있을 수 있습니다.
+    //    남아있는 항들은 이미 정렬되어 있으므로 그대로 결과 행렬 S의 뒤에 이어 붙입니다.
+    while (a_idx < A->terms) S.data[s_idx++] = A->data[a_idx++];
+    while (b_idx < B->terms) S.data[s_idx++] = B->data[b_idx++];
+
+    // 7. 최종적으로 만들어진 항의 개수를 S.terms에 저장합니다.
+    S.terms = s_idx;
+
+    // 8. (메모리 최적화) 처음에 넉넉하게 할당했던 메모리를 실제 사용한 크기에 맞게 줄여줍니다.
+    if (S.terms > 0) {
+        Term *resized_data = (Term *)realloc(S.data, S.terms * sizeof(Term));
+        if (resized_data) {
+            S.data = resized_data;
+        }
+    } else { // 최종 항이 0개라면 메모리를 완전히 해제합니다.
+        free(S.data);
+        S.data = NULL;
+    }
+    
+    return S;
+    // ===== END: To Fill (상세 주석 추가) =====
+}
+
+int main(void) {
+    int n, num;
+    if (scanf("%d %d", &n, &num) != 2) {
+        fprintf(stderr, "입력 오류\n");
+        return 1;
+    }
+
+    SparseMatrix M;
+    M.rows  = n;
+    M.terms = num;
+    M.data  = malloc(num * sizeof(Term));
+    if (!M.data) {
+        perror("메모리 할당 실패");
+        return 1;
+    }
+
+    for (int i = 0; i < num; i++) {
+        if (scanf("%d %d %d",
+                    &M.data[i].row,
+                    &M.data[i].col,
+                    &M.data[i].value) != 3) {
+            fprintf(stderr, "입력 형식 오류\n");
+            free(M.data);
+            return 1;
+        }
+    }
+
+    // 1) 원본 출력
+    print_matrix(&M);
+
+    // 2) 전치 생성 및 출력
+    SparseMatrix T = transpose(&M);
+    print_matrix(&T);
+
+    // 3) 원본 + 전치 더하기 및 출력
+    SparseMatrix S = add_sparse(&M, &T);
+    print_matrix(&S);
+
+    // 해제
+    free(M.data);
+    free(T.data);
+    free(S.data);
+    return 0;
+}
