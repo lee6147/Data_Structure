@@ -1,0 +1,20 @@
+#include <stdio.h>
+
+int factorial(int n)
+{
+    // 순환을 멈추는 부분
+    if( n == 0 || n == 1)
+        return 1;
+   
+    // 순환 호출을 하는 부분
+    else
+        return n * factorial(n-1);
+}
+
+int main(void)
+{
+    int n;
+    scanf("%d", &n);
+    printf("%d", factorial(n));
+    return 0;
+}
