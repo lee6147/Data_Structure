@@ -1,0 +1,207 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef int Element;             // 연결 리스트에 저장될 데이터의 종류를 정수(int)로 정합니다.
+typedef struct LinkedNode {
+    Element data;                // 노드(데이터 한 칸)에 저장될 실제 값
+    struct LinkedNode* link;     // 다음 노드를 가리키는 '연결 고리' (포인터)
+} Node;
+
+// 사용이 끝난 연결 리스트의 모든 노드 메모리를 청소하는 함수
+void free_list(Node* head) {
+    Node* current = head; // 청소할 현재 노드를 가리키는 포인터
+    while (current != NULL) {
+        Node* temp = current; // 현재 노드를 잠시 저장해두고
+        current = current->link; // 다음 노드로 이동합니다.
+        free(temp); // 저장해뒀던 이전 노드를 메모리에서 해제합니다.
+    }
+}
+
+// 연결 리스트를 처음 만들 때 초기화하는 함수
+Node* init_list(Node* head) {
+    // 연결 리스트는 기차와 같아요. 처음에는 아무 칸도 없으니 '비어있다'는 뜻의 NULL을 반환합니다.
+    return NULL;
+}
+
+// 연결 리스트가 비어있는지 확인하는 함수
+int is_empty(Node* head) {
+    // 기차의 맨 앞 칸(head)이 NULL(없음)이면, 기차 전체가 비어있는 것입니다.
+    return head == NULL;
+}
+
+// 특정 위치(at)에 있는 노드를 찾아주는 함수
+Node* get_entry(Node* head, int at) {
+    Node* p = head; // p는 기차의 맨 앞 칸부터 시작하는 탐색용 포인터입니다.
+    // at번 만큼 다음 칸으로 이동합니다. (0번 칸은 이동하지 않음)
+    for (int i = 0; i < at; i++) {
+        // 목적지에 도착하기 전에 기차가 끝나버리면 (p가 NULL이 되면)
+        if (p == NULL) return NULL; // 찾는 칸이 없다는 뜻이므로 NULL을 반환합니다.
+        p = p->link; // p를 다음 칸으로 이동시킵니다.
+    }
+    return p; // at번 만큼 이동한 위치의 노드를 반환합니다.
+}
+
+// 특정 위치(at)에 새로운 데이터(data)를 삽입하는 함수
+Node* insert_at(Node* head, int at, Element data) {
+    // 삽입 위치가 0보다 작으면 잘못된 요청이므로 아무것도 하지 않습니다.
+    if (at < 0) return head;
+
+    // 삽입할 새 기차 칸(노드)을 하나 만듭니다.
+    Node* n = (Node*)malloc(sizeof(Node));
+    n->data = data; // 새 칸에 데이터를 넣고,
+    n->link = NULL; // 연결 고리는 일단 비워둡니다.
+
+    // Case 1: 기차의 맨 앞(at == 0)에 삽입하는 경우
+    if (at == 0) {
+        n->link = head;     // 새 칸의 연결 고리를 원래 맨 앞 칸에 연결하고,
+        return n;           // 이제 이 새 칸이 기차의 맨 앞(head)이 됩니다.
+    }
+
+    // Case 2: 기차의 중간이나 맨 뒤에 삽입하는 경우
+    // 삽입할 위치의 '바로 앞 칸'을 찾아야 합니다.
+    Node* prev = get_entry(head, at - 1);
+    if (prev != NULL) { // 바로 앞 칸이 존재한다면,
+        n->link = prev->link; // 새 칸의 연결 고리를 '앞 칸의 다음 칸'에 연결하고,
+        prev->link = n;       // '앞 칸'의 연결 고리를 '새 칸'에 연결합니다.
+    } else {
+        // 바로 앞 칸을 찾을 수 없다면 잘못된 위치이므로, 만들었던 새 칸은 그냥 버립니다.
+        free(n);
+    }
+    return head; // 맨 앞 칸은 그대로이므로 head를 반환합니다.
+}
+
+// 특정 위치(at)의 노드를 삭제하는 함수
+Node* remove_at(Node* head, int at) {
+    // 삭제할 위치가 0보다 작거나, 기차가 비어있으면 아무것도 하지 않습니다.
+    if (at < 0 || head == NULL) return head;
+
+    Node* removed; // 삭제될 노드를 잠시 담아둘 포인터
+
+    // Case 1: 기차의 맨 앞(at == 0) 칸을 삭제하는 경우
+    if (at == 0) {
+        removed = head;         // 현재 맨 앞 칸을 '삭제될 칸'으로 지정하고,
+        head = head->link;      // 이제부터 두 번째 칸이 새로운 맨 앞(head)이 됩니다.
+        free(removed);          // '삭제될 칸'은 메모리에서 완전히 제거합니다.
+    }
+    // Case 2: 중간이나 마지막 칸을 삭제하는 경우
+    else {
+        // 삭제할 칸의 '바로 앞 칸'을 찾습니다.
+        Node* prev = get_entry(head, at - 1);
+        // '앞 칸'과 '삭제될 칸'이 모두 존재한다면,
+        if (prev != NULL && prev->link != NULL) {
+            removed = prev->link; // '앞 칸'의 다음 칸이 '삭제될 칸'입니다.
+            // '앞 칸'의 연결 고리를 '삭제될 칸의 다음 칸'에 바로 연결해서, '삭제될 칸'을 건너뛰게 만듭니다.
+            prev->link = removed->link;
+            free(removed); // '삭제될 칸'은 메모리에서 제거합니다.
+        }
+    }
+    return head; // 새로운 맨 앞(head)을 반환합니다.
+}
+
+// 두 개의 연결 리스트(기차)를 하나로 합치는 함수
+Node* concat_list(Node* head1, Node* head2) {
+    // 만약 첫 번째 기차가 비어있다면, 합친 결과는 그냥 두 번째 기차입니다.
+    if (head1 == NULL) {
+        return head2;
+    }
+    // 첫 번째 기차가 비어있지 않다면,
+    // p를 첫 번째 기차의 맨 앞으로 두고,
+    Node* p = head1;
+    // p의 연결고리가 NULL이 될 때까지 (마지막 칸에 도착할 때까지) 계속 이동합니다.
+    while (p->link != NULL) {
+        p = p->link;
+    }
+    // 첫 번째 기차의 마지막 칸의 연결 고리를 두 번째 기차의 맨 앞 칸(head2)에 연결합니다.
+    p->link = head2;
+    return head1; // 합쳐진 기차의 맨 앞은 여전히 head1입니다.
+}
+
+// 연결 리스트(기차)의 순서를 거꾸로 뒤집는 함수
+Node* reverse_list(Node* head) {
+    // 세 개의 포인터(손)를 사용해서 기차 칸의 연결 방향을 하나씩 바꿉니다.
+    Node *p, *q, *r;
+    p = head;     // p: 아직 처리 안 된 원래 기차 부분을 가리키는 손
+    q = NULL;     // q: 순서가 뒤집힌 새로운 기차의 맨 앞을 가리키는 손
+    r = NULL;     // r: q를 도와주기 위해 q의 바로 뒤를 따라가는 손
+
+    // p가 원래 기차의 끝을 지나갈 때까지 반복합니다.
+    while (p != NULL) {
+        r = q;        // 1. r이 현재까지 뒤집힌 부분(q)을 잠시 기억합니다.
+        q = p;        // 2. p가 가리키는 칸을 떼어내, 새로운 맨 앞(q)으로 만듭니다.
+        p = p->link;  // 3. p는 잊어버리기 전에 원래 기차의 다음 칸으로 이동합니다.
+        q->link = r;  // 4. 새로운 맨 앞(q)의 연결 고리를 아까 r이 기억해둔 곳에 연결합니다.
+    }
+    // 모든 칸을 다 뒤집고 나면, q가 최종적으로 뒤집힌 기차의 맨 앞이 됩니다.
+    return q;
+}
+
+// 연결 리스트의 모든 데이터를 순서대로 출력하는 함수
+void print_list(Node* head) {
+    Node* p;
+    // p가 맨 앞 칸부터 시작해서 NULL이 될 때까지(기차가 끝날 때까지) 이동하며 출력합니다.
+    for (p = head; p != NULL; p = p->link) {
+        printf("%d->", p->data);
+    }
+    printf("NULL\n");
+}
+
+
+int main() {
+    int i, n, m, data;
+    char c[15];
+    Node *head1 = NULL, *head2 = NULL; // 두 개의 기차(연결 리스트)를 준비합니다.
+    head1 = init_list(head1);
+    head2 = init_list(head2);
+
+    // 첫 번째 기차에 내릴 명령어의 개수를 입력받습니다.
+    scanf("%d", &n);
+
+    // n번 만큼 명령어 처리를 반복합니다.
+    for (i = 0; i < n; i++) {
+        int at;
+        scanf("%s", c); // 명령어를 문자열로 입력받습니다.
+
+        if (strcmp(c, "insert") == 0) { // "insert" 명령어일 경우
+            scanf("%d %d", &at, &data);
+            head1 = insert_at(head1, at, data); // at 위치에 data를 삽입합니다.
+            print_list(head1); // 매번 결과를 출력합니다.
+        } else if (strcmp(c, "remove") == 0) { // "remove" 명령어일 경우
+            scanf("%d", &at);
+            head1 = remove_at(head1, at); // at 위치의 노드를 삭제합니다.
+            print_list(head1); // 매번 결과를 출력합니다.
+        } else if (strcmp(c, "empty") == 0) {
+            printf("%d\n", is_empty(head1));
+        } else if (strcmp(c, "getentry") == 0) {
+            scanf("%d", &at);
+            Node* entry = get_entry(head1, at);
+            if (entry != NULL)
+                printf("%d\n", entry->data);
+            else
+                printf("Invalid position\n");
+        } else
+            printf("error\n");
+    }
+
+    // 두 번째 기차에 넣을 데이터의 개수를 입력받습니다.
+    scanf("%d", &m);
+    for(i = 0; i < m; i++) {
+        scanf("%d", &data);
+        head2 = insert_at(head2, i, data); // 데이터를 순서대로 기차에 추가합니다.
+    }
+
+    // 두 기차를 합칩니다.
+    Node* concatenated = concat_list(head1, head2);
+    printf("concat: ");
+    print_list(concatenated);
+
+    // 합쳐진 기차를 뒤집습니다.
+    Node* reversed = reverse_list(concatenated);
+    printf("reverse: ");
+    print_list(reversed);
+
+    // 사용이 끝난 모든 노드(기차 칸)의 메모리를 깨끗하게 정리합니다.
+    free_list(reversed);
+
+    return 0;
+}
