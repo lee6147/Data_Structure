@@ -1,0 +1,168 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <string.h>
+// #include <ctype.h> // 이 헤더는 코드에서 사용되지 않으므로 주석 처리하거나 제거해도 됩니다.
+#include <stdlib.h>
+
+typedef int element; // 요소의 타입
+
+// 큐의 각 요소를 나타내는 노드 구조체
+typedef struct QueueNode
+{
+    element data; // 데이터
+    struct QueueNode *link; // 다음 노드를 가리키는 포인터
+} QueueNode;
+
+// 큐 전체를 관리하는 구조체
+typedef struct
+{
+    QueueNode *front; // 큐의 맨 앞(데이터가 나가는 곳)을 가리키는 포인터
+    QueueNode *rear;  // 큐의 맨 뒤(데이터가 들어오는 곳)를 가리키는 포인터
+} LinkedQueueType;
+
+// 큐를 초기화하는 함수: front와 rear를 NULL로 설정
+void init(LinkedQueueType *q)
+{
+    // front와 rear 포인터를 NULL로 초기화하여 빈 큐 상태로 만듭니다.
+    q->front = q->rear = NULL;
+}
+
+// 큐가 비어 있는지 확인하는 함수: front 포인터가 NULL인지 검사
+int is_empty(LinkedQueueType *q)
+{
+    // front가 NULL이면 큐가 비어있는 것입니다.
+    return (q->front == NULL);
+}
+
+// 큐의 맨 앞 데이터를 삭제하지 않고 확인 (Peek)
+element peek(LinkedQueueType *q)
+{
+    // 큐가 비어있는 경우 -1 반환 (문제 요구사항)
+    if (is_empty(q)) // is_empty 함수를 호출하여 큐가 비었는지 확인
+        return -1; // 비어있으면 -1 반환
+    // 큐가 비어있지 않으면 front 노드의 데이터 반환
+    return q->front->data; // front가 가리키는 노드의 데이터를 반환
+}
+
+// 큐에 들어있는 요소의 개수를 반환 (Size)
+int size(LinkedQueueType *q)
+{
+    int count = 0; // 노드 개수를 셀 변수 초기화
+    QueueNode *p = q->front; // 순회를 시작할 포인터 p를 front로 설정
+    // p가 NULL이 될 때까지 (리스트 끝까지) 반복
+    while (p != NULL)
+    {
+        count++; // 노드 개수 증가
+        p = p->link; // 다음 노드로 이동
+    }
+    return count; // 계산된 노드 개수 반환
+}
+
+// 큐의 맨 뒤(rear)에 새로운 요소를 추가하는 함수 (Enqueue)
+void enqueue(LinkedQueueType *q, element data)
+{
+    // 새 노드를 생성하고 데이터를 저장할 포인터 변수 선언 및 메모리 할당
+    QueueNode *temp = (QueueNode *)malloc(sizeof(QueueNode));
+    if (temp == NULL) error("메모리 할당 에러"); // 메모리 할당 실패 시 오류 처리
+    // 새 노드에 전달받은 데이터 저장
+    temp->data = data;
+    // 새 노드는 마지막 노드가 되므로 link는 NULL
+    temp->link = NULL;
+
+    // 엣지 케이스: 큐가 비어있을 경우
+    if (is_empty(q)) // is_empty 함수로 큐가 비었는지 확인
+    {
+        // front와 rear 모두 새 노드를 가리키도록 설정
+        q->front = temp;
+        q->rear = temp;
+    }
+    else // 큐에 요소가 이미 있는 경우
+    {
+        // 현재 rear 노드의 link가 새 노드를 가리키도록 함 (순서 중요)
+        q->rear->link = temp;
+        // rear 포인터를 새로 추가된 노드로 업데이트
+        q->rear = temp;
+    }
+}
+
+// 큐의 맨 앞(front)에서 요소를 삭제하고 반환하는 함수 (Dequeue)
+element dequeue(LinkedQueueType *q)
+{
+    // 삭제될 노드를 임시로 저장할 포인터 변수 선언하고 front를 가리키게 함
+    QueueNode *temp = q->front;
+    element data; // 삭제될 노드의 데이터를 저장할 변수
+
+    // 큐가 비어있는지 확인
+    if (is_empty(q)) // is_empty 함수로 확인
+    {
+        // 비어있으면 오류 메시지 출력 후 프로그램 종료
+        fprintf(stderr, "큐가 비어있음\n");
+        exit(1);
+    }
+    else // 큐가 비어있지 않은 경우
+    {
+        // 반환할 데이터를 임시 변수에 저장
+        data = temp->data;
+        // front 포인터를 다음 노드로 이동
+        q->front = q->front->link;
+
+        // 엣지 케이스: 노드를 제거한 후 큐가 비게 된 경우
+        if (q->front == NULL)
+            // rear 포인터도 NULL로 설정하여 완전히 빈 큐 상태로 만듦
+            q->rear = NULL;
+
+        // 제거된 노드(temp가 가리키는 노드)의 메모리를 해제
+        free(temp);
+        // 저장해두었던 데이터를 반환
+        return data;
+    }
+}
+
+// 큐의 모든 요소를 출력하는 함수
+void print_queue(LinkedQueueType *q)
+{
+    // front부터 시작하여 link를 따라가며 각 노드의 데이터 출력
+    for (QueueNode *p = q->front; p != NULL; p = p->link)
+        printf("%d->", p->data); // "데이터->" 형식으로 출력
+    printf("NULL \n"); // 마지막에 "NULL"과 개행 문자 출력
+}
+
+// 메인 함수
+int main(void)
+{
+    LinkedQueueType s; // 연결 큐 타입 변수 선언
+    int n, num; // 명령 수(n), enqueue할 숫자(num) 변수 선언
+    init(&s); // 큐 초기화
+    char c[10]; // 명령어를 입력받을 문자열 배열
+
+    scanf("%d", &n); // 명령의 수 입력 받기
+    // n번 반복하며 명령어 처리
+    for (int i = 0; i < n; i++)
+    {
+        scanf("%s", c); // 명령어 문자열 입력 받기
+
+        // 입력받은 명령어가 "enqueue"인 경우
+        if (strcmp(c, "enqueue") == 0)
+        {
+            scanf("%d", &num); // enqueue할 정수 입력 받기
+            enqueue(&s, num); // enqueue 함수 호출
+        }
+        // 입력받은 명령어가 "dequeue"인 경우
+        else if (strcmp(c, "dequeue") == 0)
+        {
+            printf("%d\n", dequeue(&s)); // dequeue 함수 호출 및 결과 출력
+        }
+        // 그 외의 명령어는 오류 처리
+        else {
+             // 잘못된 명령어 입력 시 에러 메시지 출력 (실제 문제에서는 이 경우가 없을 수 있음)
+             fprintf(stderr,"Unknown command: %s\n", c);
+        }
+
+    }
+    // 모든 명령 처리 후 큐의 상태 정보 출력
+    printf("size : %d\n", size(&s)); // 현재 큐의 크기 출력
+    printf("empty : %d\n", is_empty(&s)); // 큐가 비었는지 여부 출력 (1: 비었음, 0: 안 비었음)
+    printf("peek : %d\n", peek(&s)); // 큐의 맨 앞 데이터 확인 (비었으면 -1)
+    print_queue(&s); // 현재 큐의 모든 요소 출력
+    return 0; // 프로그램 정상 종료
+}
