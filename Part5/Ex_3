@@ -1,0 +1,184 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// 다항식의 한 항을 나타내는 노드 구조체 정의
+typedef struct ListNode {
+    int coef;               // 계수 (coefficient)
+    int expon;              // 지수 (exponent)
+    struct ListNode* link;  // 다음 노드를 가리키는 포인터
+} Node;
+
+// 다항식 리스트를 관리하는 헤더 구조체 정의
+typedef struct ListType {
+    int size;    // 리스트의 노드 개수
+    Node* head;  // 시작 노드 포인터
+    Node* tail;  // 마지막 노드 포인터
+} ListType;
+
+// 오류 처리 함수
+void error(char* message) {
+    fprintf(stderr, "%s\n", message);
+    exit(1);
+}
+
+// ListType 구조체를 생성하고 초기화하는 함수
+ListType* create_list() {
+    // ListType 구조체 동적 메모리 할당
+    ListType* plist = (ListType*)malloc(sizeof(ListType));
+    if (plist == NULL) error("메모리 할당 에러"); // 메모리 할당 실패 시 오류 처리
+    plist->size = 0;         // 초기 크기는 0
+    plist->head = plist->tail = NULL; // head와 tail 포인터를 NULL로 초기화
+    return plist;            // 생성된 ListType 포인터 반환
+}
+
+// 다항식 리스트의 맨 마지막에 새로운 항을 추가하는 함수
+void insert_last(ListType* plist, int coef, int expon) {
+    // 새로운 노드(항) 동적 메모리 할당
+    Node* temp = (Node*)malloc(sizeof(Node));
+    if (temp == NULL) error("메모리 할당 에러"); // 메모리 할당 실패 시 오류 처리
+    temp->coef = coef;   // 계수 저장
+    temp->expon = expon; // 지수 저장
+    temp->link = NULL;   // 새 노드는 마지막 노드가 되므로 link는 NULL
+
+    // 리스트가 비어있는 경우
+    if (plist->tail == NULL) {
+        plist->head = plist->tail = temp; // head와 tail 모두 새 노드를 가리킴
+    }
+    // 리스트에 노드가 이미 있는 경우
+    else {
+        plist->tail->link = temp; // 현재 마지막 노드의 link가 새 노드를 가리키도록 함
+        plist->tail = temp;       // tail 포인터를 새 노드로 업데이트
+    }
+    plist->size++; // 리스트 크기 증가
+}
+
+// 두 다항식의 덧셈을 수행하는 함수 (list3 = list1 + list2)
+void poly_add(ListType* poly1, ListType* poly2, ListType* poly3) {
+    Node* a = poly1->head; // poly1의 현재 노드를 가리키는 포인터
+    Node* b = poly2->head; // poly2의 현재 노드를 가리키는 포인터
+    int sum; // 계수의 합을 저장할 변수
+
+    // poly1과 poly2 모두 항이 남아있는 동안 반복
+    while (a && b) {
+        // a의 지수 == b의 지수
+        if (a->expon == b->expon) {
+            sum = a->coef + b->coef; // 계수를 더함
+            if (sum != 0) { // 합이 0이 아니면 결과 다항식에 추가
+                insert_last(poly3, sum, a->expon);
+            }
+            a = a->link; // 다음 항으로 이동
+            b = b->link; // 다음 항으로 이동
+        }
+        // a의 지수 > b의 지수
+        else if (a->expon > b->expon) {
+            insert_last(poly3, a->coef, a->expon); // a의 항을 결과 다항식에 추가
+            a = a->link; // a만 다음 항으로 이동
+        }
+        // a의 지수 < b의 지수
+        else {
+            insert_last(poly3, b->coef, b->expon); // b의 항을 결과 다항식에 추가
+            b = b->link; // b만 다음 항으로 이동
+        }
+    }
+
+    // poly1에 남아있는 항들을 결과 다항식에 추가
+    for (; a != NULL; a = a->link) {
+        insert_last(poly3, a->coef, a->expon);
+    }
+    // poly2에 남아있는 항들을 결과 다항식에 추가
+    for (; b != NULL; b = b->link) {
+        insert_last(poly3, b->coef, b->expon);
+    }
+}
+
+// 다항식 리스트를 출력하는 함수
+void poly_print(ListType* poly) {
+    Node* p = poly->head; // 시작 노드부터 순회
+
+    // 리스트가 비어있으면 0 출력 (문제 요구사항)
+    if (p == NULL) {
+        printf("0\n");
+        return;
+    }
+
+    // 첫 번째 항 출력
+    if (p->expon == 0) { // 지수가 0이면 계수만 출력
+        printf("%d", p->coef);
+    } else if (p->expon == 1) { // 지수가 1이면 "cx^1" 형태로 출력
+        printf("%dx^%d", p->coef, p->expon);
+    } else { // 그 외에는 "cx^e" 형태로 출력
+        printf("%dx^%d", p->coef, p->expon);
+    }
+    p = p->link; // 다음 노드로 이동
+
+    // 두 번째 항부터 출력
+    while (p != NULL) { // 다음 노드가 있을 때까지 반복
+        printf(" + "); // 항 사이에 " + " 추가
+        if (p->expon == 0) { // 지수가 0이면 계수만 출력
+            printf("%d", p->coef);
+        } else if (p->expon == 1) { // 지수가 1이면 "cx^1" 형태로 출력
+            printf("%dx^%d", p->coef, p->expon);
+        } else { // 그 외에는 "cx^e" 형태로 출력
+             printf("%dx^%d", p->coef, p->expon);
+        }
+        p = p->link; // 다음 노드로 이동
+    }
+    printf("\n"); // 출력 완료 후 개행
+}
+
+// 리스트의 모든 노드 메모리를 해제하는 함수
+void free_list(ListType* poly) {
+    Node* current = poly->head; // 시작 노드부터 시작
+    Node* next;
+
+    // 리스트의 모든 노드를 순회하며 메모리 해제
+    while (current != NULL) {
+        next = current->link; // 다음 노드 주소 임시 저장
+        free(current);       // 현재 노드 메모리 해제
+        current = next;      // 다음 노드로 이동
+    }
+    free(poly); // ListType 구조체 자체의 메모리 해제
+}
+
+int main(void) {
+    ListType *A, *B, *C;
+    int n, m, i, coef, expon;
+
+    // 세 개의 다항식 리스트 생성
+    A = create_list();
+    B = create_list();
+    C = create_list();
+
+    // 각 다항식의 항의 개수 입력
+    scanf("%d %d", &n, &m);
+
+    // 다항식 A의 각 항을 (계수 지수) 형태로 입력
+    for (i = 0; i < n; i++) {
+        scanf("%d %d", &coef, &expon);
+        insert_last(A, coef, expon);
+    }
+
+    // 다항식 B의 각 항을 (계수 지수) 형태로 입력
+    for (i = 0; i < m; i++) {
+        scanf("%d %d", &coef, &expon);
+        insert_last(B, coef, expon);
+    }
+
+    // 다항식 출력
+    printf("A = ");
+    poly_print(A);
+    printf("B = ");
+    poly_print(B);
+
+    // 다항식 덧셈 수행
+    poly_add(A, B, C);
+    printf("A + B = ");
+    poly_print(C);
+
+    // 할당된 메모리 해제
+    free_list(A);
+    free_list(B);
+    free_list(C);
+
+    return 0;
+}
