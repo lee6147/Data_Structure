@@ -1,0 +1,72 @@
+#include <stdio.h>
+#include <stdlib.h> // malloc, free 대신 정적 초기화를 사용하므로 필수 아님
+#include <memory.h> // 필요 없음
+
+// 이진 트리 노드 구조체 정의 [cite: 3813-3816]
+typedef struct TreeNode {
+    int data;
+    struct TreeNode* left, * right;
+} TreeNode;
+
+// --- 트리 노드 초기화 ---
+// PDF 예제처럼 정적으로 노드를 정의하고 연결 [cite: 3820-3826]
+//        15
+//       /  \
+//      4    20
+//     /    /  \
+//    1    16  25
+TreeNode n1 = { 1, NULL, NULL };
+TreeNode n2 = { 4, &n1, NULL };
+TreeNode n3 = { 16, NULL, NULL };
+TreeNode n4 = { 25, NULL, NULL };
+TreeNode n5 = { 20, &n3, &n4 };
+TreeNode n6 = { 15, &n2, &n5 };
+TreeNode* root = &n6; // 루트 노드 설정
+
+// --- 순회 함수들 ---
+// 중위 순회 함수 (LVR) [cite: 3829-3836]
+void inorder(TreeNode* root) {
+    // 현재 노드가 NULL이 아니면 순회 진행
+    if (root != NULL) {
+        inorder(root->left);         // 1. 왼쪽 서브트리 순회
+        printf("[%d] ", root->data);   // 2. 현재 노드 데이터 출력 (방문)
+        inorder(root->right);        // 3. 오른쪽 서브트리 순회
+    }
+}
+
+// 전위 순회 함수 (VLR) [cite: 3702-3708]
+void preorder(TreeNode* root) {
+    // 현재 노드가 NULL이 아니면 순회 진행
+    if (root != NULL) {
+        printf("[%d] ", root->data);   // 1. 현재 노드 데이터 출력 (방문)
+        preorder(root->left);        // 2. 왼쪽 서브트리 순회 <--- 수정됨!
+        preorder(root->right);       // 3. 오른쪽 서브트리 순회
+    }
+}
+
+// 후위 순회 함수 (LRV) [cite: 3792-3798]
+void postorder(TreeNode* root) {
+    // 현재 노드가 NULL이 아니면 순회 진행
+    if (root != NULL) {
+        postorder(root->left);       // 1. 왼쪽 서브트리 순회
+        postorder(root->right);      // 2. 오른쪽 서브트리 순회
+        printf("[%d] ", root->data);  // 3. 현재 노드 데이터 출력 (방문)
+    }
+}
+
+// --- 메인 함수 ---
+int main(void) {
+    printf("중위 순회=");
+    inorder(root); // 중위 순회 호출
+    printf("\n");
+
+    printf("전위 순회=");
+    preorder(root); // 전위 순회 호출
+    printf("\n");
+
+    printf("후위 순회=");
+    postorder(root); // 후위 순회 호출
+    printf("\n");
+
+    return 0; // 프로그램 정상 종료
+}
