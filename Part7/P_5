@@ -1,0 +1,216 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef int TreeElement;
+typedef struct TreeNode {
+    TreeElement key;
+    struct TreeNode* left;
+    struct TreeNode* right;
+} TreeNode;
+
+TreeNode* create_tree_node(TreeElement key) {
+    TreeNode* node = (TreeNode*)malloc(sizeof(TreeNode));
+    node->key = key;
+    node->left = NULL;
+    node->right = NULL;
+    return node;
+}
+
+void delete_tree_node(TreeNode* node) {
+    if (node == NULL) return;
+    delete_tree_node(node->left);
+    delete_tree_node(node->right);
+    free(node);
+}
+
+typedef struct {
+    TreeNode* root;
+} BinaryTree;
+
+void init_tree(BinaryTree* tree) { tree->root = NULL; }
+void delete_tree(BinaryTree* tree) {
+    if (tree->root == NULL) return;
+    delete_tree_node(tree->root);
+    tree->root = NULL;
+}
+int is_empty_tree(BinaryTree* tree) { return tree->root == NULL; }
+
+// 이진 탐색 트리에서 특정 값을 찾는 함수
+TreeNode* search_key(TreeNode* subroot, TreeElement key) {
+    // 탐색 실패
+    if (subroot == NULL) return NULL;
+    
+    // === Gems가 채운 코드 시작 ===
+    // PDF 8.트리.pdf (Page 76)의 'search' 함수 로직을 참고했습니다.
+    
+    // 1. (탐색 성공) 현재 노드의 키가 내가 찾는 키와 같으면
+    if (key == subroot->key) {
+        return subroot; // 이 노드를 반환
+    }
+    // 2. (왼쪽 탐색) 내가 찾는 키가 현재 노드의 키보다 작으면
+    else if (key < subroot->key) {
+        // 왼쪽 서브트리로 내려가서 다시 탐색 (재귀 호출)
+        return search_key(subroot->left, key);
+    }
+    // 3. (오른쪽 탐색) 내가 찾는 키가 현재 노드의 키보다 크면
+    else {
+        // 오른쪽 서브트리로 내려가서 다시 탐색 (재귀 호출)
+        return search_key(subroot->right, key);
+    }
+    
+    // === Gems가 채운 코드 끝 ===
+}
+
+// 이진 탐색 트리에 키를 삽입하는 함수
+// 키를 삽입 후 서브 트리의 루트를 반환
+TreeNode* insert_key(TreeNode* subroot, TreeElement key) {
+    // 서브 루트 노드가 NULL인 경우 새로운 노드를 생성하여 반환
+    if (subroot == NULL) return create_tree_node(key);
+
+    // === Gems가 채운 코드 시작 ===
+    // PDF 8.트리.pdf (Page 80)의 'insert_node' 함수 로직을 참고했습니다.
+    
+    // 1. (왼쪽 삽입) 삽입할 키가 현재 노드 키보다 작으면
+    if (key < subroot->key) {
+        // 왼쪽 서브트리에 삽입하라고 재귀 호출을 하고,
+        // 그 결과를 현재 노드의 왼쪽 자식으로 연결합니다.
+        subroot->left = insert_key(subroot->left, key);
+    }
+    // 2. (오른쪽 삽입) 삽입할 키가 현재 노드 키보다 크면
+    else if (key > subroot->key) {
+        // 오른쪽 서브트리에 삽입하라고 재귀 호출을 하고,
+        // 그 결과를 현재 노드의 오른쪽 자식으로 연결합니다.
+        subroot->right = insert_key(subroot->right, key);
+    }
+    // (참고: 키가 같으면(key == subroot->key) 아무것도 하지 않고 
+    //        그냥 subroot를 반환합니다. PDF 로직은 중복을 허용하지 않습니다.)
+    
+    // === Gems가 채운 코드 끝 ===
+
+    return subroot;
+}
+
+// 이진 탐색 트리에서 최소값을 가진 노드를 찾는 함수
+TreeNode* min_value_node(TreeNode* subroot) {
+    TreeNode* current = subroot;
+    
+    // === Gems가 채운 코드 시작 ===
+    // PDF 8.트리.pdf (Page 88)의 'min_value_node' 함수 로직을 참고했습니다.
+    
+    // 이진 탐색 트리에서 가장 작은 값은 항상 맨 왼쪽 아래에 있습니다.
+    // 왼쪽 자식이 없을(NULL) 때까지 계속 왼쪽으로만 내려갑니다.
+    while (current->left != NULL) {
+        current = current->left; // 왼쪽으로 한 칸 이동
+    }
+    
+    // === Gems가 채운 코드 끝 ===
+    
+    return current; // 찾은 최소값 노드를 반환
+}
+
+// 이진 탐색 트리에서 키를 삭제하는 함수
+// 키를 삭제 후 서브 트리의 루트를 반환
+TreeNode* delete_key(TreeNode* subroot, TreeElement key) {
+    // 키가 없는 경우
+    if (subroot == NULL) return subroot;
+
+    // === Gems가 채운 코드 시작 ===
+    // PDF 8.트리.pdf (Pages 86-88)의 'delete_node' 함수 로직을 참고했습니다.
+    
+    // --- 1. 삭제할 노드를 찾는 과정 (재귀) ---
+    // 삭제할 키(key)가 현재 노드(subroot->key)보다 작으면
+    if (key < subroot->key) {
+        // 왼쪽 서브트리로 가서 삭제 연산을 수행하고,
+        // (삭제 연산 후) 변경된 왼쪽 서브트리의 루트를 다시 나의 왼쪽 자식으로 연결합니다.
+        subroot->left = delete_key(subroot->left, key);
+    }
+    // 삭제할 키(key)가 현재 노드(subroot->key)보다 크면
+    else if (key > subroot->key) {
+        // 오른쪽 서브트리로 가서 삭제 연산을 수행하고,
+        // (삭제 연산 후) 변경된 오른쪽 서브트리의 루트를 다시 나의 오른쪽 자식으로 연결합니다.
+        subroot->right = delete_key(subroot->right, key);
+    }
+
+    // --- 2. 삭제할 노드를 찾은 경우 (key == subroot->key) ---
+    else {
+        TreeNode* temp; // 삭제될 노드를 대신할 노드를 임시로 가리킬 포인터
+
+        // (Case 1: 자식이 없거나, 오른쪽 자식만 있는 경우 - PDF Page 82, 87)
+        // 왼쪽 자식이 없으면
+        if (subroot->left == NULL) {
+            // 오른쪽 자식(이 없으면 NULL)을 temp에 저장
+            temp = subroot->right;
+            // 현재 노드(subroot)를 메모리에서 해제(삭제)
+            free(subroot);
+            // 부모 노드에게 "이제부터 얘가 네 자식이야" 하고 temp를 반환
+            return temp;
+        }
+        // (Case 2: 왼쪽 자식만 있는 경우 - PDF Page 83, 87)
+        // 오른쪽 자식이 없으면
+        else if (subroot->right == NULL) {
+            // 왼쪽 자식을 temp에 저장
+            temp = subroot->left;
+            // 현재 노드(subroot)를 메모리에서 해제(삭제)
+            free(subroot);
+            // 부모 노드에게 temp를 반환
+            return temp;
+        }
+
+        // (Case 3: 자식이 둘 다 있는 경우 - PDF Page 84, 87-88)
+        // "오른쪽 서브트리에서 가장 작은 노드(후계자)"를 찾습니다.
+        temp = min_value_node(subroot->right);
+
+        // 현재 노드(삭제될 노드)의 키 값을 후계자의 키 값으로 덮어씁니다.
+        // (이제 이 노드는 삭제되지 않고, 값만 후계자의 값으로 바뀝니다.)
+        subroot->key = temp->key;
+
+        // 원본 후계자 노드(temp)는 이제 중복이 되었으므로 삭제해야 합니다.
+        // 오른쪽 서브트리로 내려가서 후계자의 키 값(temp->key)을 가진 노드를 삭제하라고 재귀 호출합니다.
+        subroot->right = delete_key(subroot->right, temp->key);
+    }
+    
+    // === Gems가 채운 코드 끝 ===
+    
+    return subroot; // 변경된(혹은 그대로인) 현재 노드의 주소를 부모에게 반환
+}
+
+
+void inorder(TreeNode* subroot) {
+    if (subroot != NULL) {
+        inorder(subroot->left);
+        printf("[%d] ", subroot->key);
+        inorder(subroot->right);
+    }
+}
+
+int main() {
+    BinaryTree* tree = (BinaryTree*)malloc(sizeof(BinaryTree));
+    init_tree(tree);  // 트리 초기화
+    char c[10];
+    int T, key;
+    scanf("%d", &T);
+    for (int i = 0; i < T; i++) {
+        scanf("%s", c);
+        if (strcmp(c, "insert") == 0) {
+            scanf("%d", &key);
+            tree->root = insert_key(tree->root, key);
+        } else if (strcmp(c, "delete") == 0) {
+            scanf("%d", &key);
+            tree->root = delete_key(tree->root, key);
+        } else if (strcmp(c, "printTree") == 0) {
+            inorder(tree->root);
+            printf("\n");
+        } else if (strcmp(c, "search") == 0) {
+            scanf("%d", &key);
+            TreeNode* node = search_key(tree->root, key);
+            if (node != NULL)
+                printf("[%d]\n", node->key);
+            else
+                printf("fail\n");
+        }
+    }
+
+    delete_tree(tree);
+    return 0;
+}
