@@ -1,0 +1,127 @@
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define MAX_HEAP_SIZE 10000 // 힙이 저장할 수 있는 최대 요소 개수
+
+// 힙에 저장할 요소를 정의합니다.
+typedef struct {
+    int key; // key 값이 클수록 우선순위가 높습니다 (최대 힙)
+} HeapElement;
+
+// 힙 자체를 나타내는 구조체입니다.
+typedef struct {
+    HeapElement elements[MAX_HEAP_SIZE]; // 요소를 저장할 배열 (1번 인덱스부터 사용)
+    int size; // 현재 힙에 저장된 요소의 개수
+} Heap;  // 최대 힙
+
+// 힙 초기화 함수
+void init_heap(Heap* heap) {
+    heap->size = 0; // 힙의 크기를 0으로 설정
+}
+
+// 힙에 새로운 요소를 삽입하는 함수
+void insert_heap(Heap* heap, HeapElement item) {
+    
+    /*** Fill the code START ***/
+    
+    // 1. 힙의 크기를 1 증가시키고, 'current' 변수에 새 노드가 들어갈 인덱스(가장 마지막)를 저장
+    int current = ++(heap->size); 
+
+    // 2. 트리를 거슬러 올라가면서 부모 노드와 비교 (Upheap)
+    //    'current'가 루트(1)가 아니고, 새 요소 'item'이 부모(current / 2)보다 크면 반복
+    while ((current != 1) && (item.key > heap->elements[current / 2].key)) {
+        // 3. 부모 노드의 값을 현재 위치(자식)로 한 칸 내림
+        heap->elements[current] = heap->elements[current / 2];
+        // 4. 'current' 인덱스를 부모 인덱스로 변경 (한 레벨 위로 이동)
+        current /= 2;
+    }
+    // 5. 'item'이 들어갈 최종 위치(current)에 값을 삽입
+    heap->elements[current] = item;  // 새로운 노드를 삽입
+    
+    /*** Fill the code END ***/
+}
+
+// 최대 힙의 최대 원소(루트)를 삭제하는 함수
+HeapElement delete_heap(Heap* heap) {
+    int parent, child;
+    HeapElement item, temp;
+
+    /*** Fill the code START ***/
+    
+    // 1. 삭제할 루트 노드(최대값)를 'item' 변수에 임시 저장
+    item = heap->elements[1];
+    // 2. 힙의 가장 마지막 노드를 'temp' 변수에 저장하고, 힙 크기를 1 감소
+    temp = heap->elements[(heap->size)--];
+    
+    // 3. 'temp' 노드를 힙의 올바른 위치로 내리기 위한 변수 초기화 (Downheap)
+    parent = 1; // 'parent'는 루트에서 시작
+    child = 2;  // 'child'는 루트의 왼쪽 자식(2)에서 시작
+
+    while (child <= heap->size) { // 4. 'child'가 힙의 범위를 벗어나지 않는 동안 반복
+        // 5. 두 자식 노드 중 더 큰 값을 가진 자식 노드를 찾음
+        //    (child < heap->size) : 오른쪽 자식이 존재하는지 확인
+        //    (elements[child].key < elements[child + 1].key) : 오른쪽 자식이 왼쪽 자식보다 큰지 확인
+        if ((child < heap->size) &&
+            (heap->elements[child].key) < heap->elements[child + 1].key) {
+            child++; // 'child' 인덱스를 오른쪽 자식(child + 1)으로 변경
+        }
+        
+        // 6. 'temp'(원래 마지막 노드)의 값이 더 큰 자식의 값보다 크거나 같으면,
+        //    힙 속성(부모 > 자식)이 만족되므로 제자리를 찾은 것. 반복 중단.
+        if (temp.key >= heap->elements[child].key) break;
+
+        // 7. 'temp'가 자식보다 작으므로, 자식 노드를 부모 위치로 한 칸 올림
+        heap->elements[parent] = heap->elements[child];
+        
+        // 8. 다음 레벨로 이동
+        parent = child;   // 'parent'는 현재 'child' 위치로 이동
+        child *= 2;       // 'child'는 다음 레벨의 왼쪽 자식 위치로 이동
+    }
+    // 9. 반복이 끝난 'parent' 위치가 'temp'가 들어갈 최종 위치임
+    heap->elements[parent] = temp;
+    // 10. 처음에 저장해둔 원래의 루트 노드(최대값)를 반환
+    return item;
+    
+    /*** Fill the code END ***/
+}
+
+// 힙을 레벨 순서대로 출력하는 함수 (문제에서 제공됨)
+void print_heap(Heap* heap) {
+    int i, level;
+    for (i = 1, level = 2; i <= heap->size; i++) {
+        if (i == level) {
+            printf("\n");
+            level *= 2;
+        }
+        printf("%d ", heap->elements[i].key);
+    }
+    printf("\n");
+}
+
+int main() {
+    char c[16];
+    int T;
+    int key;
+    Heap* heap = (Heap*)malloc(sizeof(Heap)); // 힙 동적 할당
+    HeapElement e;
+
+    init_heap(heap); // 힙 초기화
+
+    scanf("%d", &T); // 명령어 개수 입력
+    for (int i = 0; i < T; i++) {
+        scanf("%s", c); // 명령어 문자열 입력
+        if (strcmp(c, "insert_heap") == 0) { // "insert_heap" 명령이면
+            scanf("%d", &key);
+            e.key = key;
+            insert_heap(heap, e); // 힙에 삽입
+        } else if (strcmp(c, "delete_heap") == 0) { // "delete_heap" 명령이면
+            printf("%d\n", delete_heap(heap).key); // 힙에서 삭제하고 삭제된 값 출력
+        } else if (strcmp(c, "print_heap") == 0) { // "print_heap" 명령이면
+            print_heap(heap); // 힙 내용 출력
+        }
+    }
+
+    free(heap); // 할당된 힙 메모리 해제
+    return 0;
+}
