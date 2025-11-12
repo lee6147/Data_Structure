@@ -1,0 +1,216 @@
+#include <stdio.h>
+#include <stdlib.h> // malloc, free, exit 함수를 사용하기 위해 필요해요.
+#include <string.h> // (문자열 처리를 위한 함수들 - 이 코드에서는 직접 사용되진 않네요)
+
+// 트리의 노드에 저장될 데이터의 타입을 정의해요. 여기서는 '문자(char)'를 사용해요.
+typedef char TreeElement;
+
+// 트리 노드 구조체 정의 [cite: 6391]
+typedef struct TreeNode {
+    TreeElement data;          // 노드에 저장될 데이터 (문자)
+    struct TreeNode* left;   // 왼쪽 자식 노드를 가리키는 포인터
+    struct TreeNode* right;  // 오른쪽 자식 노드를 가리키는 포인터
+} TreeNode;
+
+// 이진 트리를 전체적으로 관리하는 구조체
+typedef struct {
+    TreeNode* root; // 트리의 시작점인 루트 노드를 가리키는 포인터
+} BinaryTree;
+
+// 트리를 초기화하는 함수 (루트 노드를 NULL로 설정)
+void init_tree(BinaryTree* tree) { 
+    tree->root = NULL; 
+}
+
+// 트리가 비어있는지 확인하는 함수 (루트가 NULL이면 비어있는 것)
+int is_empty_tree(BinaryTree* tree) { 
+    return tree->root == NULL; 
+}
+
+// 새로운 트리 노드를 동적으로 생성하는 함수 [cite: 6411]
+TreeNode* create_tree_node(TreeElement val, TreeNode* l, TreeNode* r) {
+    // malloc을 이용해 노드 하나를 저장할 만큼의 메모리를 할당받아요. [cite: 2535]
+    TreeNode* root = (TreeNode*)malloc(sizeof(TreeNode));
+    if (root == NULL) { // 메모리 할당에 실패하면 오류를 출력하고 종료해요.
+        error("메모리 할당 에러");
+    }
+    root->data = val; // 전달받은 데이터를 노드에 저장
+    root->left = l;   // 왼쪽 서브트리 포인터 연결
+    root->right = r;  // 오른쪽 서브트리 포인터 연결
+    return root;      // 생성된 노드의 주소(포인터)를 반환
+}
+
+//================================================================
+// [8.트리.pdf]에서 배운 3가지 순회 방법 (깊이 우선 탐색, DFS)
+
+// 1. 전위 순회 (VLR: Visit -> Left -> Right) [cite: 6481]
+void preorder(TreeNode* subroot) {
+    // subroot가 NULL이 아닐 때만(방문할 노드가 있을 때만) 실행해요.
+    if (subroot) { 
+        printf("[%c] ", subroot->data); // (V) 1. 루트 노드(자기 자신)를 먼저 방문(출력)
+        preorder(subroot->left);        // (L) 2. 왼쪽 서브트리를 재귀적으로 방문
+        preorder(subroot->right);       // (R) 3. 오른쪽 서브트리를 재귀적으로 방문
+    }
+}
+
+// 2. 중위 순회 (LVR: Left -> Visit -> Right) [cite: 6523]
+void inorder(TreeNode* subroot) {
+    // subroot가 NULL이 아닐 때만 실행해요.
+    if (subroot) { 
+        inorder(subroot->left);         // (L) 1. 왼쪽 서브트리를 먼저 재귀적으로 방문
+        printf("[%c] ", subroot->data); // (V) 2. 왼쪽 방문이 끝나면 루트 노드(자기 자신)를 방문(출력)
+        inorder(subroot->right);        // (R) 3. 마지막으로 오른쪽 서브트리를 재귀적으로 방문
+    }
+}
+
+// 3. 후위 순회 (LRV: Left -> Right -> Visit) [cite: 6571]
+void postorder(TreeNode* subroot) {
+    // subroot가 NULL이 아닐 때만 실행해요.
+    if (subroot) {
+        postorder(subroot->left);       // (L) 1. 왼쪽 서브트리를 먼저 재귀적으로 방문
+        postorder(subroot->right);      // (R) 2. 오른쪽 서브트리를 재귀적으로 방문
+        printf("[%c] ", subroot->data); // (V) 3. 자식 노드 방문이 모두 끝나면 루트 노드(자기 자신)를 방문(출력)
+    }
+}
+
+//================================================================
+// [5.큐.pdf]와 [8.트리.pdf]의 레벨 순회를 위한 원형 큐 구현
+
+#define MAX_QUEUE_SIZE 100        // 큐의 최대 크기 설정 [cite: 6778]
+typedef TreeNode* QueueElement;   // 큐에 저장할 요소는 '트리 노드의 포인터' [cite: 6779]
+
+// 원형 큐 구조체 [cite: 361, 6780]
+typedef struct {
+    QueueElement data[MAX_QUEUE_SIZE]; // 노드 포인터를 저장할 배열
+    int front;                         // 큐의 시작점(앞) [cite: 363, 6782]
+    int rear;                          // 큐의 끝점(뒤) [cite: 363, 6782]
+} Queue;
+
+// 오류 메시지를 출력하고 프로그램을 종료하는 함수 [cite: 116, 6788]
+void error(char str[]) {
+    printf("%s\n", str);
+    exit(1);
+}
+
+// 큐를 초기화하는 함수 (front와 rear를 0으로 설정) [cite: 374, 6793]
+void init_queue(Queue* queue) { 
+    queue->front = queue->rear = 0; 
+}
+
+// 큐가 비어있는지 확인하는 함수 (front와 rear가 같으면 공백) [cite: 379, 6798]
+int is_empty_queue(Queue* queue) { 
+    return queue->front == queue->rear; 
+}
+
+// 큐가 가득 찼는지 확인하는 함수 (원형 큐의 포화 조건) [cite: 384, 6806]
+int is_full_queue(Queue* queue) {
+    return queue->front == (queue->rear + 1) % MAX_QUEUE_SIZE;
+}
+
+// 큐에 데이터를 삽입하는 함수 (enqueue) [cite: 410, 6811]
+void enqueue(Queue* queue, QueueElement val) {
+    if (is_full_queue(queue)) {
+        error("  큐 포화 에러"); // 큐가 가득 찼으면 오류
+    }
+    queue->rear = (queue->rear + 1) % MAX_QUEUE_SIZE; // rear를 다음 칸으로 이동
+    queue->data[queue->rear] = val;                   // 데이터 삽입
+}
+
+// 큐에서 데이터를 꺼내는 함수 (dequeue) [cite: 416, 6816]
+QueueElement dequeue(Queue* queue) {
+    if (is_empty_queue(queue)) {
+        error("  큐 공백 에러"); // 큐가 비었으면 오류
+    }
+    queue->front = (queue->front + 1) % MAX_QUEUE_SIZE; // front를 다음 칸으로 이동
+    return queue->data[queue->front];                   // 데이터 반환
+}
+
+// 4. 레벨 순회 (너비 우선 탐색, BFS) [cite: 6758]
+void levelorder(TreeNode* root) {
+    Queue q;          // 레벨 순회에 사용할 큐 생성 [cite: 6824]
+    init_queue(&q);   // 큐 초기화 [cite: 6825]
+
+    if (root == NULL) return; // 트리가 비어있으면 함수 종료
+
+    enqueue(&q, root); // 1. 큐에 루트 노드를 먼저 삽입해요. [cite: 6761, 6827]
+    
+    // 큐가 비어있지 않은 동안 계속 반복해요. [cite: 6762]
+    while (!is_empty_queue(&q)) { 
+        // 2. 큐에서 노드를 하나 꺼내요(dequeue). [cite: 6763]
+        TreeNode* ptr = dequeue(&q); 
+        
+        // 3. 꺼낸 노드(현재 노드)의 데이터를 출력(방문)해요. [cite: 6764, 6830]
+        printf("[%c] ", ptr->data); 
+
+        // 4. 현재 노드의 왼쪽 자식이 있으면 (NULL이 아니면) [cite: 6765, 6831]
+        if (ptr->left)
+            // 큐에 왼쪽 자식을 삽입(enqueue)해요. (다음 레벨 방문 예약) [cite: 6832]
+            enqueue(&q, ptr->left); 
+        
+        // 5. 현재 노드의 오른쪽 자식이 있으면 (NULL이 아니면) [cite: 6765, 6833]
+        if (ptr->right)
+            // 큐에 오른쪽 자식을 삽입(enqueue)해요. (다음 레벨 방문 예약) [cite: 6834]
+            enqueue(&q, ptr->right);
+    }
+}
+
+// 메인 함수: 프로그램의 시작점
+int main() {
+    // 트리를 관리할 구조체 포인터를 동적 할당
+    BinaryTree* tree = (BinaryTree*)malloc(sizeof(BinaryTree));
+    init_tree(tree);  // 트리 초기화
+
+    int N; // 노드의 개수를 저장할 변수
+    scanf("%d\n", &N);  // 사용자로부터 노드 개수(N)를 입력받음
+
+    // N개의 트리 노드 포인터를 저장할 배열(메모리 풀)을 동적 할당
+    TreeNode** node = (TreeNode**)malloc(sizeof(TreeNode*) * N);
+    // 각 노드 자체의 메모리도 동적 할당
+    for (int i = 0; i < N; i++) {
+        node[i] = (TreeNode*)malloc(sizeof(TreeNode));
+    }
+
+    // N번 반복하며 각 노드의 (데이터, 왼쪽 자식, 오른쪽 자식) 정보를 입력받음
+    for (int i = 0; i < N; i++) {
+        TreeNode *tmp, *l_node, *r_node;
+        char root_data, left_data, right_data;
+        scanf(" %c %c %c", &root_data, &left_data, &right_data);
+
+        // 왼쪽 자식이 '.'이면 NULL, 아니면 해당 알파벳에 맞는 노드 포인터를 연결
+        l_node = left_data == '.' ? NULL : node[left_data - 'A'];
+        // 오른쪽 자식이 '.'이면 NULL, 아니면 해당 알파벳에 맞는 노드 포인터를 연결
+        r_node = right_data == '.' ? NULL : node[right_data - 'A'];
+        
+        // 임시로 노드를 생성 (이 코드는 약간 비효율적이지만, 입력 코드를 따를게요)
+        tmp = create_tree_node(root_data, l_node, r_node);
+
+        // 생성된 임시 노드의 정보를 'node' 배열의 i번째 노드에 복사
+        node[i]->data = tmp->data;
+        node[i]->left = tmp->left;
+        node[i]->right = tmp->right;
+        
+        free(tmp); // 임시 노드는 메모리 해제
+    }
+    // 첫 번째로 입력된 노드(node[0])를 트리의 루트로 설정
+    tree->root = node[0];
+
+    // --- 트리 순회 테스트 프로그램 ---
+    printf("In-Order : ");
+    inorder(tree->root);      // 중위 순회 실행
+    printf("\nPre-Order : ");
+    preorder(tree->root);     // 전위 순회 실행
+    printf("\nPost-Order : ");
+    postorder(tree->root);    // 후위 순회 실행
+    printf("\nLevel-Order : ");
+    levelorder(tree->root);   // 레벨 순회 실행
+    printf("\n");
+
+    // --- 할당된 메모리 해제 ---
+    for (int i = 0; i < N; i++) {
+        free(node[i]); // 노드 배열의 각 노드 메모리 해제
+    }
+    free(node);  // 노드 포인터 배열 자체의 메모리 해제
+    free(tree);  // 트리 관리 구조체 메모리 해제 [cite: 2548]
+
+    return 0; // 프로그램 정상 종료
+}
