@@ -1,0 +1,291 @@
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define MAX_ELEMENT 10000
+
+// 문자와 빈도수를 저장하기 위한 테이블 구조체
+typedef struct {
+    int frequency; // 빈도수
+    char data;     // 문자
+} AlphabetTable;
+
+// 허프만 트리의 노드 구조체 정의
+// PDF "9.우선순위큐" p.45 에 나온 트리 노드 구조체와 유사해.
+typedef struct HuffmanTreeNode {
+    int weight; // 빈도수 (가중치)
+    char data;  // 문자
+    struct HuffmanTreeNode* left;
+    struct HuffmanTreeNode* right;
+} HuffmanTreeNode;
+
+// 최소 힙에 저장할 요소 구조체 정의
+// PDF "9.우선순위큐" p.13 의 element 구조체를 확장했어.
+typedef struct HeapElement {
+    int key;    // 우선순위 (여기서는 빈도수 'weight'를 key로 사용 )
+    char data;  // 문자
+    HuffmanTreeNode* subtree; // 이 요소에 해당하는 허프만 트리 노드를 가리킴
+} HeapElement;
+
+// 최소 힙 구조체 정의
+// PDF "9.우선순위큐" p.13 의 HeapType 구조체와 동일해.
+typedef struct {
+    int heap_size; // 힙에 저장된 요소의 개수 
+    HeapElement element[MAX_ELEMENT]; // 요소를 저장할 배열 
+} MinHeap;
+
+//================================================================
+// Heap 관련 함수들
+//================================================================
+
+// 최소 힙 초기화
+void init_min_heap(MinHeap* heap) {
+    heap->heap_size = 0; // 힙의 크기를 0으로 설정 
+}
+
+// [핵심 로직 1: 최소 힙에 데이터 추가하기]
+// PDF "9.우선순위큐" p.18 의 삽입 로직을 '최소' 힙 기준으로 수정한 코드야.
+// (PDF는 '최대' 힙 기준 )
+void insert_min_heap(MinHeap* heap, HeapElement element) {
+    // 1. 힙의 크기를 하나 늘려. (새로운 데이터가 들어올 자리를 만듦) 
+    heap->heap_size++;
+    int i = heap->heap_size; // 새 데이터는 일단 맨 마지막 자리에 위치해.
+
+    // 2. "up-heap" (새 데이터 승진시키기) 
+    //    새 데이터(element.key)가 제자리를 찾을 때까지 부모와 비교하며 위로 올려보내.
+    //    - (i != 1): 현재 위치가 루트(1번 자리)가 아니고,
+    //    - (element.key < heap->element[i / 2].key): 새 데이터가 부모 데이터보다 우선순위가 높으면(값이 작으면)
+    //    
+    while ((i != 1) && (element.key < heap->element[i / 2].key)) {
+        
+        // 3. 부모를 자식 자리로 끌어내려 (자리 바꾸기). 
+        heap->element[i] = heap->element[i / 2];
+        
+        // 4. 나(새 데이터)는 한 칸 위(부모 자리)로 이동해서 계속 비교 준비. 
+        i /= 2;
+    }
+    
+    // 5. "up-heap" 종료! 여기가 내 자리. 
+    heap->element[i] = element; 
+}
+
+
+// [핵심 로직 2: 최소 힙에서 데이터 꺼내기 (삭제)]
+// PDF "9.우선순위큐" p.23 의 삭제 로직을 '최소' 힙 기준으로 수정한 코드야.
+// (PDF는 '최대' 힙 기준 )
+HeapElement delete_min_heap(MinHeap* heap) {
+    // 1. 가장 우선순위가 높은 데이터(루트 노드)를 따로 보관해 둬. (이걸 반환할 거야) 
+    HeapElement deleted_element = heap->element[1];
+    
+    // 2. 힙의 맨 마지막에 있던 데이터를 루트(1번 자리)로 일단 옮겨. 
+    HeapElement last_element = heap->element[heap->heap_size];
+    heap->heap_size--; // 힙 크기 하나 줄이기.
+
+    int parent = 1; // 비교 시작 위치 (루트) 
+    int child = 2;  // 비교 대상 (일단 왼쪽 자식) 
+
+    // 3. "down-heap" (루트로 온 데이터 강등시키기) 
+    //    루트로 온 'last_element'가 제자리를 찾을 때까지 자식들과 비교하며 아래로 내려보내.
+    while (child <= heap->heap_size) { // 힙 범위 안에서만 반복 
+        
+        // 4. 두 자식 중 누가 더 우선순위가 높은지(값이 작은지) 찾아. 
+        //    (오른쪽 자식(child+1)이 존재하고, 오른쪽이 왼쪽보다 더 작으면)
+        if ((child < heap->heap_size) &&
+            (heap->element[child].key > heap->element[child + 1].key))
+            child++; // 비교 대상을 오른쪽 자식으로 변경!
+
+        // 5. "down-heap" 종료! (부모가 자식보다 우선순위가 높으면(값이 작거나 같으면) 제자리를 찾은 것) 
+        if (last_element.key <= heap->element[child].key) break;
+
+        // 6. 자식이 부모보다 우선순위가 높네? 자식을 부모 자리로 승진시켜. 
+        heap->element[parent] = heap->element[child];
+        
+        // 7. 나(last_element)는 한 칸 아래(자식 자리)로 이동해서 계속 비교 준비. 
+        parent = child;
+        child *= 2; // 그 자리의 왼쪽 자식부터 다시 비교 시작.
+    }
+
+    // 8. 여기가 'last_element'의 최종 자리! 
+    heap->element[parent] = last_element;
+    
+    // 9. 처음에 보관해뒀던 원래 루트(최소값)를 반환. 
+    return deleted_element;
+}
+
+//================================================================
+// 이진 트리 관련 함수들
+//================================================================
+
+// 트리 노드 생성 함수
+// PDF "9.우선순위큐" p.48 의 함수와 동일해.
+HuffmanTreeNode* make_tree(HuffmanTreeNode* left, HuffmanTreeNode* right) {
+    // 1. 새로운 허프만 트리 노드를 위한 메모리 할당
+    HuffmanTreeNode* node = (HuffmanTreeNode*)malloc(sizeof(HuffmanTreeNode));
+    if (node == NULL) {
+        fprintf(stderr, "메모리 할당 오류\n");
+        exit(1);
+    }
+    // 2. 전달받은 노드들을 각각 왼쪽, 오른쪽 자식으로 설정 
+    node->left = left;
+    node->right = right;
+    return node; // 3. 새로 생성된 노드의 포인터 반환 
+}
+
+// 트리 메모리 해제 함수 (후위 순회)
+// PDF "9.우선순위큐" p.48 의 함수와 동일해. (후위 순회 기반 )
+void destroy_tree(HuffmanTreeNode* root) {
+    if (root == NULL) return;     // 빈 트리면 종료 
+    destroy_tree(root->left);     // 왼쪽 서브트리 메모리 해제 
+    destroy_tree(root->right);    // 오른쪽 서브트리 메모리 해제 
+    free(root);                   // 루트 노드 메모리 해제 
+}
+
+// 허프만 코드를 저장하기 위한 전역 배열
+int codes[100] = {0};
+
+// 전위 순회를 이용한 코드 출력 함수 (문제에서 제공된 로직)
+// PDF "8.트리" p.29 의 전위 순회(preorder)와 유사한 재귀 구조야.
+void preorder(HuffmanTreeNode* subtree, int depth) {
+    // 1. Base Case: 빈 트리 혹은 NULL 노드인 경우 종료
+    if (!subtree) return;
+    
+    // 2. Base Case: 리프 노드인 경우 (문자가 저장된 노드)
+    // PDF "9.우선순위큐" p.48 의 is_leaf 조건과 같아.
+    if (subtree->left == NULL && subtree->right == NULL) {
+        // 문자와 빈도수 출력
+        printf("%c %d ", subtree->data, subtree->weight);
+        
+        // 'codes' 배열에 저장된 0과 1 (허프만 코드)을 출력
+        for (int i = 0; i < depth; i++) {
+            printf("%d", codes[i]);
+        }
+        printf("\n");
+        return; // 리프 노드이므로 더 이상 내려가지 않고 종료
+    }
+    
+    // 3. Recursive Case: 내부 노드인 경우 (PDF "8.트리" p.29 참고)
+    // 왼쪽으로 가면 1 (문제 조건에 따라 1 할당)
+    codes[depth] = 1;
+    preorder(subtree->left, depth + 1); // 왼쪽 서브트리로 재귀 호출
+    
+    // 오른쪽으로 가면 0 (문제 조건에 따라 0 할당)
+    codes[depth] = 0;
+    preorder(subtree->right, depth + 1); // 오른쪽 서브트리로 재귀 호출
+}
+
+//================================================================
+// 허프만 코드 생성 함수
+//================================================================
+
+// [핵심 로직 3: 허프만 코드 트리 만들기]
+// PDF "9.우선순위큐" p.50-51 의 로직을 구현한 부분이야.
+void huffman_tree(int freq[], char data[], int alphabet_size) {
+    
+    // 1. 최소 힙(우선순위 큐)을 하나 만들어. 
+    MinHeap* heap = (MinHeap*)malloc(sizeof(MinHeap));
+    init_min_heap(heap);
+
+    // 2. (1단계: 잎 노드 만들기) 
+    //    각 문자에 대한 '리프 노드(잎 노드)'를 만들어서 힙에 다 넣어줘.
+    //    이때 빈도수(freq)가 우선순위(key)가 돼.
+    for (int i = 0; i < alphabet_size; i++) {
+        // 'make_tree(NULL, NULL)'는 자식이 없는 잎 노드를 만드는 거야. 
+        HuffmanTreeNode* node = make_tree(NULL, NULL);
+        HeapElement e;
+
+        e.data = node->data = data[i];     // 문자 (e.g., 'a') 
+        e.key = node->weight = freq[i]; // 빈도수 (e.g., 4) 
+        e.subtree = node;                   // 이 노드를 가리키는 포인터 
+
+        insert_min_heap(heap, e); // 힙에 삽입 (빈도수 낮은 순으로 자동 정렬됨) 
+    }
+
+    // 3. (2단계: 트리 결합하기)
+    //    힙에 노드가 하나만 남을 때까지(최종 루트) 반복해.
+    //    (alphabet_size - 1)번 반복하면 돼. 
+    for (int i = 1; i < alphabet_size; i++) {
+        
+        // 4. 힙에서 빈도수가 가장 낮은 노드 2개를 꺼내. 
+        HeapElement e1 = delete_min_heap(heap); // 가장 빈도수 낮은 트리
+        HeapElement e2 = delete_min_heap(heap); // 두 번째로 빈도수 낮은 트리
+
+        // 5. 새 부모 노드(내부 노드)를 만들고, 이 2개 노드를 자식으로 붙여. 
+        //    (e1.key <= e2.key 이므로 e1이 왼쪽 자식이 됨)
+        HuffmanTreeNode* x = make_tree(e1.subtree, e2.subtree);
+
+        // 6. 새 부모 노드(e)를 만들어서 다시 힙에 넣어.
+        HeapElement e;
+        // 새 부모의 빈도수(key) = 두 자식의 빈도수 합 
+        e.key = x->weight = e1.key + e2.key; 
+        e.data = '\0'; // 부모 노드(내부 노드)는 문자가 없어.
+        e.subtree = x; // 새 트리를 가리키도록 함. 
+
+        insert_min_heap(heap, e); // 힙에 다시 넣으면, 새 빈도수(key)로 자동 정렬돼. 
+    }
+
+    // 7. (3단계: 코드 출력)
+    //    이제 힙에는 최종 완성된 허프만 트리의 '루트' 하나만 남아있어.
+    HeapElement root_element = delete_min_heap(heap); // 최종 트리 추출 
+    HuffmanTreeNode* root = root_element.subtree;
+    
+    // 'preorder' 함수(문제에서 제공)를 호출해서 트리를 순회하며 코드를 출력해. 
+    preorder(root, 0); 
+
+    // 8. (4단계: 청소)
+    destroy_tree(root); // 트리에 할당된 메모리 모두 해제 
+    free(heap);         // 힙에 할당된 메모리 해제 
+}
+
+//================================================================
+// Main 함수
+//================================================================
+
+int main() {
+    // 1. 최소 힙을 동적으로 할당하고 초기화해.
+    MinHeap* heap = (MinHeap*)malloc(sizeof(MinHeap));
+    init_min_heap(heap);
+
+    // 2. 데이터를 입력받고 'a'~'z'까지 26칸짜리 빈도수 테이블을 채워.
+    int num;
+    char input_str;
+    scanf("%d\n", &num); // 총 몇 글자인지 입력받음
+    AlphabetTable alphabet_table[26] = {0}; // 26개 알파벳 빈도수 통 (전부 0으로 초기화)
+    
+    for (int i = 0; i < num; i++) {
+        char input_str = getchar(); // 문자 하나씩 읽기
+        if (input_str <= 'z' && input_str >= 'a') { // 소문자 알파벳이면
+            alphabet_table[input_str - 'a'].data = input_str; // 'a'면 0번, 'b'면 1번...
+            alphabet_table[input_str - 'a'].frequency++;      // 해당 칸 빈도수 1 증가
+        }
+    }
+
+    // 3. (정렬 단계) 빈도수가 0이 아닌(즉, 한 번이라도 나온) 문자들만 힙에 넣어.
+    HeapElement element;
+    int alphabet_size = 0; // 실제 사용된 알파벳 종류 카운트
+    for (int i = 0; i < 26; i++) {
+        if (alphabet_table[i].frequency != 0) {
+            element.data = alphabet_table[i].data;
+            element.key = alphabet_table[i].frequency; // 빈도수를 key(우선순위)로
+            insert_min_heap(heap, element); // 힙에 넣으면 빈도수 순으로 자동 정렬됨
+            alphabet_size++;
+        }
+    }
+
+    // 4. 힙에서 데이터를 순서대로 꺼내서 '정렬된' 배열 두 개를 만들어.
+    //    (최소 힙이므로 빈도수가 가장 낮은 순서대로 꺼내짐)
+    int sorted_freq[alphabet_size];
+    char sorted_data[alphabet_size];
+    for (int i = 0; i < alphabet_size; i++) {
+        element = delete_min_heap(heap);
+        sorted_freq[i] = element.key; // 빈도수 배열 (오름차순)
+        sorted_data[i] = element.data; // 문자 배열 (빈도수에 맞춰 정렬됨)
+    }
+
+    // 5. 정렬된 빈도수와 문자 배열을 허프만 트리 함수에 전달!
+    huffman_tree(sorted_freq, sorted_data, alphabet_size);
+    
+    // 6. 힙 메모리 해제
+    free(heap);
+
+    return 0;
+}
