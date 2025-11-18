@@ -22,13 +22,13 @@ int is_full(GraphType* g) {
 
 // [TODO 함수 1] 그래프 초기화 함수
 void init_graph(GraphType* g) {
-    // PDF 10장의 'init' 함수 로직을 따릅니다. [cite: 430-438]
+    // PDF 10장의 'init' 함수 로직을 따릅니다. 
     
     int r, c;
     
     // ✅ STEP 1: 정점 개수를 0으로 초기화
     // 처음에는 그래프에 아무 정점도 없는 상태로 시작
-    g->n = 0; // [cite: 434]
+    g->n = 0; // 
     
     // ✅ STEP 2: 인접 행렬을 모두 0으로 초기화
     // 인접 행렬은 정점 간의 연결 관계를 표현하는 2차원 배열
@@ -37,17 +37,17 @@ void init_graph(GraphType* g) {
     // 처음에는 모든 정점이 서로 연결되지 않은 상태로 시작
     for (r = 0; r < MAX_VERTICES; r++)
         for (c = 0; c < MAX_VERTICES; c++)
-            g->adj_mat[r][c] = 0; // [cite: 437]
+            g->adj_mat[r][c] = 0; // 
 }
 
 // [TODO 함수 2] 정점 삽입 함수
 void insert_vertex(GraphType* g, char vertex_label) {
-    // PDF 10장의 'insert_vertex' 함수 로직을 따릅니다. [cite: 442-448]
+    // PDF 10장의 'insert_vertex' 함수 로직을 따릅니다. 
     
     // ✅ STEP 1: 정점 개수가 최대치를 넘는지 안전성 검사
     // 배열 크기가 256이므로, 256개 이상의 정점은 추가할 수 없음
     if (((g->n) + 1) > MAX_VERTICES) {
-        fprintf(stderr, "그래프: 정점의 개수 초과"); // [cite: 446]
+        fprintf(stderr, "그래프: 정점의 개수 초과"); 
         return; // 함수를 종료하고 빠져나감
     }
     
@@ -64,14 +64,14 @@ void insert_vertex(GraphType* g, char vertex_label) {
 
 // [TODO 함수 3] 간선 삽입 함수
 void insert_edge(GraphType* g, int from, int to) {
-    // PDF 10장의 'insert_edge' 함수 로직을 따릅니다. [cite: 449-458]
+    // PDF 10장의 'insert_edge' 함수 로직을 따릅니다. 
     
     // ✅ STEP 1: 정점 번호가 유효한 범위 내에 있는지 검사
     // 정점 번호는 0부터 (n-1)까지만 유효함
     // 예: 정점이 8개면 유효한 인덱스는 0~7
-    if (from >= g->n || to >= g->n) { // [cite: 452]
-        fprintf(stderr, "그래프: 정점 번호 오류"); // [cite: 453]
-        return; // [cite: 454]
+    if (from >= g->n || to >= g->n) { 
+        fprintf(stderr, "그래프: 정점 번호 오류"); 
+        return; 
     }
     
     // ✅ STEP 2: 인접 행렬에 간선 정보 표시
@@ -122,7 +122,7 @@ void init_visited(GraphType* g) {
 
 // [TODO 함수 4] DFS(깊이 우선 탐색) 재귀 함수
 void DFS(GraphType* g, int v) {
-    // PDF 10장의 'dfs_mat' 함수 로직을 따릅니다. [cite: 582-594]
+    // PDF 10장의 'dfs_mat' 함수 로직을 따릅니다.
     
     int w;
     
