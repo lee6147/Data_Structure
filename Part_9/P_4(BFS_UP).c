@@ -1,230 +1,195 @@
-#include &lt;stdint.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;stdlib.h&gt;
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-// [큐(Queue) 설정]
-// 큐는 '놀이공원 줄 서기'와 같아요. 먼저 온 사람이 먼저 나갑니다 (First-In-First-Out).
-#define MAX_QUEUE_SIZE 20 // 줄 설 수 있는 최대 인원은 20명으로 제한
-
+#define MAX_QUEUE_SIZE 20
 typedef struct QueueType {
-    int front; // 줄의 맨 앞사람 위치 (나가는 곳)
-    int rear;  // 줄의 맨 뒷사람 위치 (들어오는 곳)
-    int data[MAX_QUEUE_SIZE]; // 실제로 사람들이 서 있는 공간
+    int front;
+    int rear;
+    int data[MAX_QUEUE_SIZE];
 } QueueType;
-
 //==================================================
-// 큐(줄 서기) 관련 함수들
-
-// 1. 큐 초기화: 줄을 텅 비게 만듭니다.
+// 큐 관련 함수들
 void init_queue(QueueType* q) {
-    q-&gt;rear = -1;
-    q-&gt;front = -1;
+    q->rear = -1;
+    q->front = -1;
 }
-
-// 2. 큐가 비었는지 확인: 앞(front)과 뒤(rear)가 같으면 아무도 없는 거예요.
-int is_empty_queue(QueueType* q) { 
-    return q-&gt;front == q-&gt;rear; 
-}
-
-// 3. 큐가 꽉 찼는지 확인: 뒤(rear)가 끝까지 갔으면 더 못 들어와요.
-int is_full_queue(QueueType* q) { 
-    return q-&gt;rear == MAX_QUEUE_SIZE - 1; 
-}
-
-// 4. 데이터 넣기 (Enqueue): 줄의 맨 뒤에 사람을 세웁니다.
+int is_empty_queue(QueueType* q) { return q->front == q->rear; }
+int is_full_queue(QueueType* q) { return q->rear == MAX_QUEUE_SIZE - 1; }
 void enqueue(QueueType* q, int item) {
-    if (is_full_queue(q)) return; // 꽉 찼으면 돌려보냄
-    q-&gt;rear++;              // 뒷사람 위치를 한 칸 뒤로 밀고
-    q-&gt;data[q-&gt;rear] = item; // 그 자리에 데이터를 넣음
-}
+    if (is_full_queue(q)) return;
 
-// 5. 데이터 꺼내기 (Dequeue): 줄의 맨 앞사람을 내보냅니다.
+    q->rear++;
+    q->data[q->rear] = item;
+}
 int dequeue(QueueType* q) {
-    if (is_empty_queue(q)) return INT32_MIN; // 비어있으면 에러 값 반환
-    q-&gt;front++;               // 앞사람 위치를 한 칸 뒤로 밀고 (나갔으니)
-    return q-&gt;data[q-&gt;front]; // 나간 사람의 데이터를 반환
-}
+    if (is_empty_queue(q)) return INT32_MIN;
 
+    q->front++;
+    return q->data[q->front];
+}
 // 큐 관련 함수들 끝
 //==================================================
 
-
-// [그래프 설정]
-#define MAX_VERTICES 256 // 도시(정점)는 최대 256개까지 가능
-
-// [연결 리스트의 노드: 쪽지]
-// "여기서 다음엔 저기로 가세요"라고 적힌 쪽지입니다.
+#define MAX_VERTICES 256
 typedef struct ListNode {
-    int vertex;            // 목적지 도시 번호
-    struct ListNode* link; // 다음 쪽지를 가리키는 밧줄(포인터)
+    int vertex;
+    struct ListNode* link;
 } ListNode;
-
-// [그래프 구조체: 지도 대장]
 typedef struct GraphType {
-    int n;                            // 현재 등록된 도시의 수
-    char vertex_label[MAX_VERTICES];  // 도시의 실제 이름 (A, B, C...)
-    ListNode* adj_list[MAX_VERTICES]; // 각 도시별 '연결된 이웃 목록'의 시작점
+    int n;                            // 정점의 개수
+    char vertex_label[MAX_VERTICES];  // 정점의 이름
+    ListNode* adj_list[MAX_VERTICES];
 } GraphType;
-
 //==================================================
 // 그래프 관련 함수들
+int is_empty(GraphType* g) { return (g->n == 0); }
+int is_full(GraphType* g) { return (g->n >= MAX_VERTICES); }
 
-// 그래프가 텅 비었는지 확인
-int is_empty(GraphType* g) { 
-    return (g-&gt;n == 0); 
-}
-
-// 그래프가 꽉 찼는지 확인
-int is_full(GraphType* g) { 
-    return (g-&gt;n &gt;= MAX_VERTICES); 
-}
-
-// 1. 그래프 초기화: 백지상태로 만듭니다.
+// [TODO 1] 그래프 초기화 함수
 void init_graph(GraphType* g) {
-    /* [ 구현 부분 시작 ] */
-    g-&gt;n = 0; // 도시 0개
-    // 모든 도시의 이웃 목록을 '없음(NULL)'으로 초기화
-    for (int i = 0; i &lt; MAX_VERTICES; i++) {
-        g-&gt;adj_list[i] = NULL;
+    // 아직 정점이 하나도 없으므로 0으로 설정합니다.
+    g->n = 0;
+    
+    // 모든 정점의 친구 목록(인접 리스트)을 비워둡니다.
+    // NULL은 '아무것도 연결되지 않음'을 뜻해요. (PDF 19p 참조) 
+    for (int i = 0; i < MAX_VERTICES; i++) {
+        g->adj_list[i] = NULL;
     }
-    /* [ 구현 부분 끝 ] */
 }
 
-// 2. 그래프 삭제: 빌려 쓴 메모리(쪽지들)를 다 정리합니다.
+// [TODO 2] 그래프 메모리 해제 함수
 void free_graph(GraphType* g) {
-    /* [ 구현 부분 시작 ] */
-    for (int i = 0; i &lt; g-&gt;n; i++) {
-        ListNode* p = g-&gt;adj_list[i]; // i번째 도시의 이웃 목록을 가져와서
-        while (p != NULL) {           // 목록이 끝날 때까지
-            ListNode* temp = p;       // 현재 쪽지를 잡고
-            p = p-&gt;link;              // 다음 쪽지로 이동한 뒤
-            free(temp);               // 잡은 쪽지는 폐기(반납)
+    // 그래프에 있는 모든 정점을 하나씩 돌면서 확인합니다.
+    for (int i = 0; i < g->n; i++) {
+        // i번째 정점의 친구 목록(연결 리스트)을 가져옵니다.
+        ListNode* curr = g->adj_list[i];
+        
+        // 목록이 끝날 때까지 계속 반복합니다.
+        while (curr != NULL) {
+            ListNode* temp = curr; // 현재 노드를 임시로 저장해두고,
+            curr = curr->link;     // 다음 노드로 이동한 뒤,
+            free(temp);            // 아까 저장해둔 노드를 삭제(메모리 해제)합니다.
         }
     }
-    /* [ 구현 부분 끝 ] */
 }
 
-// 3. 정점(도시) 등록: 지도에 도시 이름을 하나 추가합니다.
+// [TODO 3] 정점 삽입 함수
 void insert_vertex(GraphType* g, char v_label) {
-    /* [ 구현 부분 시작 ] */
-    if (is_full(g)) return;          // 더 못 그리면 포기
-    g-&gt;vertex_label[g-&gt;n] = v_label; // n번째 칸에 이름(A, B..) 적기
-    g-&gt;n++;                          // 도시 개수 1 증가
-    /* [ 구현 부분 끝 ] */
+    // 그래프가 꽉 찼으면 더 이상 넣을 수 없어요.
+    if (is_full(g)) return;
+    
+    // 현재 정점 번호(g->n) 위치에 이름(A, B, C...)을 저장합니다.
+    g->vertex_label[g->n] = v_label;
+    
+    // 정점의 개수를 1개 늘려줍니다.
+    g->n++;
 }
 
-// 4. 간선(길) 연결: 두 도시 사이의 길을 등록합니다.
-// 중요: 이웃 목록의 '맨 앞'에 새치기하듯 끼워 넣습니다.
-// (PDF의 Head Insertion 방식: 나중에 들어온 게 리스트의 앞에 옴)
+// [TODO 4] 간선 삽입 함수 (누구와 누가 연결되었는지 추가)
 void insert_edge(GraphType* g, int from, int to) {
-    /* [ 구현 부분 시작 ] */
-    // 1. 새 쪽지(노드)를 하나 만들고 메모리를 빌려요.
+    // 새로운 친구(노드)를 하나 만듭니다. (동적 메모리 할당)
     ListNode* node = (ListNode*)malloc(sizeof(ListNode));
     
-    // 2. 쪽지에 목적지(to)를 적어요.
-    node-&gt;vertex = to;
+    // 이 노드는 'to'라는 정점 번호를 담고 있어요.
+    node->vertex = to;
     
-    // 3. 이 쪽지가 원래 맨 앞에 있던 쪽지를 가리키게 해요.
-    node-&gt;link = g-&gt;adj_list[from];
+    // [중요] 연결 리스트의 '맨 앞'에 새 친구를 끼워 넣습니다.
+    // 1. 새 노드가 원래 있던 첫 번째 노드를 가리키게 하고,
+    node->link = g->adj_list[from];
     
-    // 4. 이제 이 쪽지가 리스트의 '새로운 맨 앞'이 됩니다.
-    g-&gt;adj_list[from] = node;
-    /* [ 구현 부분 끝 ] */
+    // 2. 헤드(adj_list[from])가 새 노드를 가리키게 합니다.
+    // 이렇게 하면 새 노드가 대장(Head)이 됩니다. (PDF 19p 인접리스트 구조) 
+    g->adj_list[from] = node;
 }
 
-// 입력값을 받아서 그래프를 완성하는 함수
 void build_graph(GraphType* g) {
+    // 정점의 개수 입력
     int n;
-    scanf("%d", &amp;n); // 도시 개수 입력
-    
+    scanf("%d", &n);
+
+    // 정점의 개수만큼 반복
     char v_label;
     int curr_v, to_v, is_connected;
-    for (curr_v = 0; curr_v &lt; n; curr_v++) {
-        scanf(" %c", &amp;v_label);     // 도시 이름 입력
-        insert_vertex(g, v_label);  // 도시 등록
-        
-        // 연결 정보 입력 (0 또는 1)
-        for (to_v = 0; to_v &lt; n; to_v++) {
-            scanf(" %d", &amp;is_connected);
-            // 1이면 연결된 것이므로 길을 추가해요.
+    for (curr_v = 0; curr_v < n; curr_v++) {
+        scanf(" %c", &v_label);
+        insert_vertex(g, v_label);
+
+        // 각 정점에 대한 연결 정보 입력
+        for (to_v = 0; to_v < n; to_v++) {
+            scanf(" %d", &is_connected);
+
             if (is_connected) insert_edge(g, curr_v, to_v);
         }
     }
 }
-
 // 그래프 관련 함수들 끝
 //==================================================
 
-
 //==================================================
-// BFS (너비 우선 탐색) 관련 함수들
-
-// 방문 체크 리스트 (0: 안 가봄, 1: 가봄)
+// BFS 관련 함수들
 int visited[MAX_VERTICES];
-
-// 방문 기록을 모두 지워서 초기화
 void init_visited(GraphType* g) {
-    for (int i = 0; i &lt; g-&gt;n; i++)
+    for (int i = 0; i < g->n; i++)
         visited[i] = 0;
 }
 
-// ★ BFS 핵심 알고리즘 ★
-// 시작점에서 가까운 곳부터 차례대로 방문합니다. (큐 사용)
+// [TODO 5] BFS(너비 우선 탐색) 함수
 void BFS(GraphType* g, QueueType* q, int v) {
-    /* [ 구현 부분 시작 ] */
-    ListNode* w; // 이웃을 가리킬 포인터
+    // 큐에서 꺼낸 정점을 임시로 저장할 변수 (w는 인접한 정점들을 가리킬 포인터)
+    ListNode* w;
+
+    // 1. 시작 정점(v)에 '방문함' 도장을 찍습니다. (PDF 36p 알고리즘) [cite: 673-685]
+    visited[v] = 1;
     
-    // 1. 시작 단계
-    visited[v] = 1;                    // 시작 도시 방문 체크!
-    printf("%c ", g-&gt;vertex_label[v]); // 도시 이름 출력 (예: A)
-    enqueue(q, v);                     // 큐(대기열)에 시작 도시 등록
+    // 방문한 정점의 이름을 출력합니다. (예: A)
+    printf(" %c", g->vertex_label[v]);
     
-    // 2. 반복 단계 (큐가 빌 때까지)
+    // 시작 정점을 큐(대기줄)에 줄을 세웁니다.
+    enqueue(q, v);
+
+    // 2. 큐가 텅 빌 때까지 계속 반복합니다.
     while (!is_empty_queue(q)) {
-        v = dequeue(q); // 큐 맨 앞에서 도시 하나를 꺼내옵니다.
-        
-        // 꺼내온 도시(v)의 이웃들을 쭉 살펴봅니다.
-        // g-&gt;adj_list[v] (첫 이웃)부터 시작해서 link가 없을 때까지 반복
-        for (w = g-&gt;adj_list[v]; w; w = w-&gt;link) {
+        // 줄 서 있는 정점 중 맨 앞의 정점을 꺼냅니다.
+        v = dequeue(q);
+
+        // 꺼낸 정점(v)의 친구들(인접 정점)을 하나씩 살펴봅니다. (PDF 42p 코드 참조) [cite: 809]
+        // w는 연결 리스트를 따라 이동하는 포인터입니다.
+        for (w = g->adj_list[v]; w; w = w->link) {
             
-            // 만약 그 이웃(w-&gt;vertex)을 아직 방문 안 했다면?
-            if (!visited[w-&gt;vertex]) {
-                visited[w-&gt;vertex] = 1; // 방문 도장 쾅!
-                printf("%c ", g-&gt;vertex_label[w-&gt;vertex]); // 이름 출력
-                enqueue(q, w-&gt;vertex);  // 다음에 그 친구의 이웃도 봐야 하니까 큐에 줄 세움
+            // 만약 그 친구(w->vertex)가 아직 방문하지 않은 곳이라면?
+            if (!visited[w->vertex]) {
+                // 방문 도장을 꾹! 찍고,
+                visited[w->vertex] = 1;
+                
+                // 이름을 출력하고,
+                printf(" %c", g->vertex_label[w->vertex]);
+                
+                // 다음 순서를 위해 큐에 줄을 세웁니다.
+                enqueue(q, w->vertex);
             }
         }
     }
-    /* [ 구현 부분 끝 ] */
 }
-
 // BFS 관련 함수들 끝
 //==================================================
 
-
 int main() {
-    // 큐와 그래프를 위한 메모리 공간(방)을 빌립니다.
-    QueueType* q = (QueueType*)malloc(sizeof(QueueType));
-    GraphType* g = (GraphType*)malloc(sizeof(GraphType));
-    
-    // 큐와 그래프 초기화
+    QueueType* q;
+    GraphType* g;
+    q = (QueueType*)malloc(sizeof(QueueType));
+    g = (GraphType*)malloc(sizeof(GraphType));
+
     init_queue(q);
     init_graph(g);
-    
-    // 입력을 받아서 그래프(지도) 완성
+
     build_graph(g);
-    
-    // BFS 탐색 시작
-    // **주의**: 출력 형식 "BFS: " (공백 포함)을 맞춰야 테스트를 통과합니다.
-    printf("BFS: ");
-    
-    init_visited(g); // 방문 기록 초기화
-    BFS(g, q, 0);    // 0번 도시부터 탐색 시작!
-    
-    // 다 썼으니 빌린 메모리 반납 (청소)
-    free_graph(g); // 리스트 노드들 해제
-    free(g);       // 그래프 구조체 해제
-    free(q);       // 큐 구조체 해제
-    
+
+    printf("BFS:");
+    init_visited(g);
+    BFS(g, q, 0);
+
+    free(g);
+
     return 0;
 }
